@@ -5,7 +5,7 @@ import {
   type Account, type InsertAccount, type JournalEntry, type InsertJournalEntry,
   type JournalLine, type InsertJournalLine, type CustomerPayment, type InsertCustomerPayment,
   type PaymentAllocation, type InsertPaymentAllocation
-} from "@shared/schema";
+} from "../../shared/schema.js";
 
 export class FinancialStorage extends BaseStorage implements IFinancialStorage {
   // Account methods

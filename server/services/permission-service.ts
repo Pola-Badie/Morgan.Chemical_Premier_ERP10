@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "../db";
-import { users, userPermissions, rolePermissions } from "@shared/schema";
-import type { User, UserPermission, RolePermission } from "@shared/schema";
+import { users, userPermissions, rolePermissions } from "../../shared/schema.js";
+import type { User, UserPermission, RolePermission } from "../../shared/schema.js";
 import { AccessLogger } from "./access-logger-service";
 
 export interface PermissionCheck {

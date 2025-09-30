@@ -7,7 +7,7 @@ import {
   expenses,
   insertJournalEntrySchema,
   insertJournalLineSchema 
-} from "@shared/schema";
+} from "../shared/schema.js";
 import { eq, sql } from "drizzle-orm";
 
 // Account codes for automatic journal entries
@@ -271,7 +271,7 @@ async function getExpenseAccountId(category: string): Promise<number | null> {
 export async function generateFinancialSummary() {
   try {
     // Import the required tables
-    const { sales, expenses } = await import("@shared/schema");
+    const { sales, expenses } = await import("../shared/schema.js");
     
     // Use Promise.all to run all queries in parallel for better performance
     const [

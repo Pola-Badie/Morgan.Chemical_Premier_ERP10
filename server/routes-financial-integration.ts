@@ -8,7 +8,7 @@ import {
   insertSaleSchema,
   insertExpenseSchema,
   expenses as expensesTable
-} from "@shared/schema";
+} from "../shared/schema.js";
 import { eq, sql } from "drizzle-orm";
 import {
   createInvoiceJournalEntry,

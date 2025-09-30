@@ -10,7 +10,7 @@ import {
   insertCurrencySchema, insertBankAccountSchema, insertBudgetSchema, insertAssetSchema,
   insertDepartmentSchema, insertEmployeeProfileSchema, insertDocumentSchema,
   insertNotificationSchema
-} from "@shared/schema";
+} from "../shared/schema.js";
 
 const router = Router();
 

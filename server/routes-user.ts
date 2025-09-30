@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { storage } from './storage';
-import { insertUserSchema, insertUserPermissionSchema } from '@shared/schema';
+import { insertUserSchema, insertUserPermissionSchema } from '../shared/schema.js';
 import { z } from 'zod';
 import { scrypt, randomBytes, timingSafeEqual } from 'crypto';
 import { promisify } from 'util';

@@ -5,7 +5,7 @@ import {
   type Batch, type InsertBatch, type ProductFormulation, type InsertProductFormulation,
   type ProductSafety, type InsertProductSafety, type QualityTest, type InsertQualityTest,
   type RegulatorySubmission, type InsertRegulatorySubmission
-} from "@shared/schema";
+} from "../../shared/schema.js";
 
 export class PharmaceuticalStorage extends BaseStorage implements IPharmaceuticalStorage {
   // Batch Management

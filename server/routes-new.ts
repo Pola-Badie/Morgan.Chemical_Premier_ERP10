@@ -17,7 +17,7 @@ import {
   insertSystemPreferenceSchema, updateSystemPreferenceSchema,
   insertRolePermissionSchema, insertLoginLogSchema, insertQuotationSchema,
   insertQuotationItemSchema, insertQuotationPackagingItemSchema
-} from "@shared/schema";
+} from "../shared/schema.js";
 import multer from "multer";
 import path from "path";
 import { promises as fs } from "fs";

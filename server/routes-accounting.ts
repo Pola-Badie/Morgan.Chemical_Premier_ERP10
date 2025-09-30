@@ -19,9 +19,9 @@ import {
   insertAccountingPeriodSchema,
   insertCustomerPaymentSchema,
   insertPaymentAllocationSchema,
-} from "@shared/schema";
+} from "../shared/schema.js";
 import { eq, and, gte, lte, desc, sql, inArray } from "drizzle-orm";
-import { 
+import {
   generateFinancialSummary,
   createInvoiceJournalEntry,
   createPaymentJournalEntry,
@@ -116,7 +116,7 @@ export function registerAccountingRoutes(app: Express) {
       await db.update(sales)
         .set({
           paymentStatus: 'refunded',
-          notes: originalInvoice.notes ? 
+          notes: originalInvoice.notes ?
             `${originalInvoice.notes}\n\nREFUNDED: EGP ${totalRefundAmount} on ${new Date(refundDate).toLocaleDateString()} - ${refundReason}` :
             `REFUNDED: EGP ${totalRefundAmount} on ${new Date(refundDate).toLocaleDateString()} - ${refundReason}`
         })
@@ -148,11 +148,11 @@ export function registerAccountingRoutes(app: Express) {
     try {
       // Get financial summary using the new integration
       const financialSummary = await generateFinancialSummary();
-      
+
       // Get additional counts from database
       const accountsResult = await db.select().from(accounts);
       const journalEntriesResult = await db.select().from(journalEntries);
-      
+
       const summary = {
         totalAccounts: accountsResult.length,
         totalJournalEntries: journalEntriesResult.length,
@@ -176,13 +176,13 @@ export function registerAccountingRoutes(app: Express) {
         'Expires': '0'
       });
 
-      const { 
-        accountFilter = 'all', 
-        fromDate, 
-        toDate, 
+      const {
+        accountFilter = 'all',
+        fromDate,
+        toDate,
         includeZeroBalance = 'true',
         showTransactionDetails = 'false',
-        groupByAccountType = 'false' 
+        groupByAccountType = 'false'
       } = req.query;
 
       let accountsWithBalances = await db
@@ -201,7 +201,7 @@ export function registerAccountingRoutes(app: Express) {
         accountsWithBalances = accountsWithBalances.filter(account => {
           const filterType = String(accountFilter).toLowerCase();
           const accountType = account.type.toLowerCase();
-          
+
           switch (filterType) {
             case 'assets only':
             case 'assets':
@@ -234,7 +234,7 @@ export function registerAccountingRoutes(app: Express) {
       const trialBalance = accountsWithBalances.map(account => {
         const balance = parseFloat(account.balance || '0');
         const isDebitNormal = ['Asset', 'Expense'].includes(account.type);
-        
+
         if (balance > 0) {
           if (isDebitNormal) {
             totalDebits += balance;
@@ -252,14 +252,14 @@ export function registerAccountingRoutes(app: Express) {
             return { ...account, debit: Math.abs(balance), credit: 0 };
           }
         }
-        
+
         return { ...account, debit: 0, credit: 0 };
       });
 
       // Filter out zero balances if requested
       let filteredTrialBalance = trialBalance;
       if (includeZeroBalance === 'false') {
-        filteredTrialBalance = trialBalance.filter(account => 
+        filteredTrialBalance = trialBalance.filter(account =>
           account.debit > 0 || account.credit > 0
         );
       }
@@ -297,7 +297,7 @@ export function registerAccountingRoutes(app: Express) {
   app.get("/api/accounting/profit-loss", async (req: Request, res: Response) => {
     try {
       const { startDate, endDate } = req.query;
-      
+
       // Default to current month if no dates provided
       const start = startDate as string || new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
       const end = endDate as string || new Date().toISOString().split('T')[0];
@@ -415,28 +415,28 @@ export function registerAccountingRoutes(app: Express) {
     try {
       // Get all customers with their real transaction data
       const customersResult = await db.select().from(customers);
-      
+
       // Load financial data for real balances
       const { loadFinancialData } = await import('./financial-seed-data');
       const financialData = loadFinancialData();
-      
+
       // Calculate real outstanding balances from due invoices
       const customerBalances = customersResult.map(customer => {
         // Find customer invoices in financial data
-        const customerInvoices = financialData.dueInvoices.filter(invoice => 
+        const customerInvoices = financialData.dueInvoices.filter(invoice =>
           invoice.client.toLowerCase().includes(customer.name.toLowerCase()) ||
           customer.name.toLowerCase().includes(invoice.client.toLowerCase())
         );
-        
+
         const totalOutstanding = customerInvoices.reduce((sum, invoice) => sum + invoice.balance, 0);
         const totalInvoiced = customerInvoices.reduce((sum, invoice) => sum + invoice.totalAmount, 0);
         const totalPaid = customerInvoices.reduce((sum, invoice) => sum + invoice.amountPaid, 0);
-        
+
         // Get last payment date
         const lastPayment = customerInvoices
           .filter(invoice => invoice.amountPaid > 0)
           .sort((a, b) => new Date(b.invoiceDate).getTime() - new Date(a.invoiceDate).getTime())[0];
-        
+
         return {
           id: customer.id,
           name: customer.name,
@@ -462,44 +462,44 @@ export function registerAccountingRoutes(app: Express) {
   app.get("/api/accounting/cash-flow-disabled", async (req: Request, res: Response) => {
     try {
       const { startDate, endDate } = req.query;
-      
+
       // Load real financial data
       const { loadFinancialData } = await import('./financial-seed-data');
       const financialData = loadFinancialData();
-      
+
       // Calculate actual cash flows from real data
       const start = startDate ? new Date(startDate as string) : new Date(new Date().getFullYear(), new Date().getMonth(), 1);
       const end = endDate ? new Date(endDate as string) : new Date();
-      
+
       // Operating activities from real data
       const salesCash = financialData.dueInvoices
         .filter(invoice => new Date(invoice.invoiceDate) >= start && new Date(invoice.invoiceDate) <= end)
         .reduce((sum, invoice) => sum + invoice.amountPaid, 0);
-      
+
       const purchasesCash = financialData.purchases
         .filter(purchase => new Date(purchase.date) >= start && new Date(purchase.date) <= end && purchase.paidStatus === 'Paid')
         .reduce((sum, purchase) => sum + purchase.total, 0);
-      
+
       const expensesCash = financialData.expenses
         .filter(expense => new Date(expense.date) >= start && new Date(expense.date) <= end)
         .reduce((sum, expense) => sum + expense.amount, 0);
-      
+
       // Calculate net operating cash flow
       const netOperatingCash = salesCash - purchasesCash - expensesCash;
-      
+
       // Investing activities (equipment purchases from expenses)
       const equipmentPurchases = financialData.expenses
-        .filter(expense => 
-          new Date(expense.date) >= start && 
+        .filter(expense =>
+          new Date(expense.date) >= start &&
           new Date(expense.date) <= end &&
           expense.description.toLowerCase().includes('equipment')
         )
         .reduce((sum, expense) => sum + expense.amount, 0);
-      
+
       // Beginning cash (simplified calculation)
       const beginningCash = 25000;
       const endingCash = beginningCash + netOperatingCash - equipmentPurchases;
-      
+
       const cashFlow = {
         period: { startDate: start, endDate: end },
         operatingActivities: {
@@ -647,7 +647,7 @@ export function registerAccountingRoutes(app: Express) {
           FROM journal_entries
           ORDER BY date DESC, id DESC
         `);
-        
+
         // Return formatted entries
         res.json(result.rows.map((entry: any) => ({
           id: entry.id,
@@ -699,30 +699,30 @@ export function registerAccountingRoutes(app: Express) {
 
       // Create sample journal entries with correct schema
       const sampleJournalEntries = [
-        { 
-          entryNumber: "JE-2025-001", 
-          reference: "SALE-001", 
-          memo: "Product sales to Cairo Medical Center", 
-          date: "2025-06-01", 
-          totalDebit: "15000.00", 
+        {
+          entryNumber: "JE-2025-001",
+          reference: "SALE-001",
+          memo: "Product sales to Cairo Medical Center",
+          date: "2025-06-01",
+          totalDebit: "15000.00",
           totalCredit: "15000.00",
           userId: 1
         },
-        { 
-          entryNumber: "JE-2025-002", 
-          reference: "PUR-001", 
-          memo: "Raw materials purchase from ChemCorp", 
-          date: "2025-06-02", 
-          totalDebit: "8500.00", 
+        {
+          entryNumber: "JE-2025-002",
+          reference: "PUR-001",
+          memo: "Raw materials purchase from ChemCorp",
+          date: "2025-06-02",
+          totalDebit: "8500.00",
           totalCredit: "8500.00",
           userId: 1
         },
-        { 
-          entryNumber: "JE-2025-003", 
-          reference: "UTIL-001", 
-          memo: "Monthly utility bill payment", 
-          date: "2025-06-03", 
-          totalDebit: "2500.00", 
+        {
+          entryNumber: "JE-2025-003",
+          reference: "UTIL-001",
+          memo: "Monthly utility bill payment",
+          date: "2025-06-03",
+          totalDebit: "2500.00",
           totalCredit: "2500.00",
           userId: 1
         }
@@ -732,19 +732,19 @@ export function registerAccountingRoutes(app: Express) {
 
       // Create journal lines for each entry with correct schema
       const journalLinesData = [];
-      
+
       // Entry 1: Sales
       journalLinesData.push(
         { journalId: insertedEntries[0].id, accountId: insertedAccounts[1].id, debit: "15000.00", credit: "0.00", description: "AR - Cairo Medical", position: 1 },
         { journalId: insertedEntries[0].id, accountId: insertedAccounts[7].id, debit: "0.00", credit: "15000.00", description: "Sales revenue", position: 2 }
       );
-      
+
       // Entry 2: Purchase
       journalLinesData.push(
         { journalId: insertedEntries[1].id, accountId: insertedAccounts[2].id, debit: "8500.00", credit: "0.00", description: "Raw materials", position: 1 },
         { journalId: insertedEntries[1].id, accountId: insertedAccounts[4].id, debit: "0.00", credit: "8500.00", description: "AP - ChemCorp", position: 2 }
       );
-      
+
       // Entry 3: Utilities
       journalLinesData.push(
         { journalId: insertedEntries[2].id, accountId: insertedAccounts[9].id, debit: "2500.00", credit: "0.00", description: "Utility expense", position: 1 },
@@ -753,7 +753,7 @@ export function registerAccountingRoutes(app: Express) {
 
       await db.insert(journalLines).values(journalLinesData);
 
-      res.json({ 
+      res.json({
         message: "Sample accounting data generated successfully",
         accountsCreated: insertedAccounts.length,
         journalEntriesCreated: insertedEntries.length,
@@ -870,42 +870,42 @@ export function registerAccountingRoutes(app: Express) {
       // Import the financial data
       const { loadFinancialData } = await import('./financial-seed-data');
       const financialData = loadFinancialData();
-      
+
       // Generate P&L data from all financial sources
-      const salesData = financialData.dueInvoices.filter(invoice => 
+      const salesData = financialData.dueInvoices.filter(invoice =>
         new Date(invoice.invoiceDate) >= start && new Date(invoice.invoiceDate) <= end
       );
-      
+
       // COGS from purchases and direct material costs
-      const directMaterialPurchases = financialData.purchases.filter(purchase => 
+      const directMaterialPurchases = financialData.purchases.filter(purchase =>
         new Date(purchase.date) >= start && new Date(purchase.date) <= end &&
-        (purchase.item.toLowerCase().includes('pharmaceutical') || 
-         purchase.item.toLowerCase().includes('active') ||
-         purchase.item.toLowerCase().includes('ingredient') ||
-         purchase.item.toLowerCase().includes('material'))
+        (purchase.item.toLowerCase().includes('pharmaceutical') ||
+          purchase.item.toLowerCase().includes('active') ||
+          purchase.item.toLowerCase().includes('ingredient') ||
+          purchase.item.toLowerCase().includes('material'))
       );
-      
+
       // Operating expenses from both purchases and general expenses
       const operatingExpenses = [
-        ...financialData.expenses.filter(expense => 
+        ...financialData.expenses.filter(expense =>
           new Date(expense.date) >= start && new Date(expense.date) <= end
         ),
-        ...financialData.purchases.filter(purchase => 
+        ...financialData.purchases.filter(purchase =>
           new Date(purchase.date) >= start && new Date(purchase.date) <= end &&
-          !(purchase.item.toLowerCase().includes('pharmaceutical') || 
+          !(purchase.item.toLowerCase().includes('pharmaceutical') ||
             purchase.item.toLowerCase().includes('active') ||
             purchase.item.toLowerCase().includes('ingredient') ||
             purchase.item.toLowerCase().includes('material'))
         )
       ];
-      
+
       // Calculate totals
       const currentRevenueTotal = salesData.reduce((sum, invoice) => sum + invoice.totalAmount, 0);
       const currentCogsTotal = directMaterialPurchases.reduce((sum, purchase) => sum + purchase.total, 0);
       const currentExpensesTotal = operatingExpenses.reduce((sum, item) => {
         return sum + ('amount' in item ? item.amount : item.total);
       }, 0);
-      
+
       // Group expenses by cost center for breakdown
       const expensesByCategory: { [key: string]: any[] } = {};
       operatingExpenses.forEach(item => {
@@ -915,31 +915,31 @@ export function registerAccountingRoutes(app: Express) {
         }
         expensesByCategory[costCenter].push(item);
       });
-      
+
       // Calculate previous period (YTD) by taking a larger date range
       const yearStart = new Date(start.getFullYear(), 0, 1); // Jan 1 of current year
-      
+
       const ytdSalesTotal = financialData.dueInvoices
         .filter(invoice => new Date(invoice.invoiceDate) >= yearStart && new Date(invoice.invoiceDate) <= end)
         .reduce((sum, invoice) => sum + invoice.totalAmount, 0);
-      
+
       const ytdDirectMaterials = financialData.purchases
-        .filter(purchase => 
+        .filter(purchase =>
           new Date(purchase.date) >= yearStart && new Date(purchase.date) <= end &&
-          (purchase.item.toLowerCase().includes('pharmaceutical') || 
-           purchase.item.toLowerCase().includes('active') ||
-           purchase.item.toLowerCase().includes('ingredient') ||
-           purchase.item.toLowerCase().includes('material'))
+          (purchase.item.toLowerCase().includes('pharmaceutical') ||
+            purchase.item.toLowerCase().includes('active') ||
+            purchase.item.toLowerCase().includes('ingredient') ||
+            purchase.item.toLowerCase().includes('material'))
         )
         .reduce((sum, purchase) => sum + purchase.total, 0);
-      
+
       const ytdOperatingExpenses = [
-        ...financialData.expenses.filter(expense => 
+        ...financialData.expenses.filter(expense =>
           new Date(expense.date) >= yearStart && new Date(expense.date) <= end
         ),
-        ...financialData.purchases.filter(purchase => 
+        ...financialData.purchases.filter(purchase =>
           new Date(purchase.date) >= yearStart && new Date(purchase.date) <= end &&
-          !(purchase.item.toLowerCase().includes('pharmaceutical') || 
+          !(purchase.item.toLowerCase().includes('pharmaceutical') ||
             purchase.item.toLowerCase().includes('active') ||
             purchase.item.toLowerCase().includes('ingredient') ||
             purchase.item.toLowerCase().includes('material'))
@@ -947,21 +947,21 @@ export function registerAccountingRoutes(app: Express) {
       ].reduce((sum, item) => {
         return sum + ('amount' in item ? item.amount : item.total);
       }, 0);
-      
+
       // Calculate variance (as percentage change, or 0 if previous period is 0)
       const calculateVariance = (current: number, previous: number) => {
         if (previous === 0) return 0;
         return ((current - previous) / previous) * 100;
       };
-      
+
       // Calculate gross profit
       const currentGrossProfit = currentRevenueTotal - currentCogsTotal;
       const ytdGrossProfit = ytdSalesTotal - ytdDirectMaterials;
-      
+
       // Calculate net profit
       const currentNetProfit = currentGrossProfit - currentExpensesTotal;
       const ytdNetProfit = ytdGrossProfit - ytdOperatingExpenses;
-      
+
       // Prepare P&L report with detailed breakdown
       res.json({
         startDate: start,
@@ -973,7 +973,7 @@ export function registerAccountingRoutes(app: Express) {
           variance: calculateVariance(currentRevenueTotal, ytdSalesTotal),
           items: salesData.map((invoice, idx) => ({
             id: idx + 1,
-            code: "400100", 
+            code: "400100",
             name: `Sales to ${invoice.client}`,
             current: invoice.totalAmount,
             ytd: invoice.totalAmount * 1.1, // Simulate YTD with slight increase
@@ -1004,7 +1004,7 @@ export function registerAccountingRoutes(app: Express) {
           current: currentExpensesTotal,
           ytd: ytdOperatingExpenses,
           variance: calculateVariance(currentExpensesTotal, ytdOperatingExpenses),
-          items: Object.entries(expensesByCategory).flatMap(([category, expenses]) => 
+          items: Object.entries(expensesByCategory).flatMap(([category, expenses]) =>
             (expenses as any[]).map((expense, idx) => ({
               id: parseInt(`${idx + 1}${Math.floor(Math.random() * 1000)}`),
               code: "600100",
@@ -1040,72 +1040,72 @@ export function registerAccountingRoutes(app: Express) {
       // Import the financial data
       const { loadFinancialData } = await import('./financial-seed-data');
       const financialData = loadFinancialData();
-      
+
       // Calculate comprehensive asset balances from all financial data
-      
+
       // Cash and Bank accounts - from all payment activities
       const cashTransactions = [
-        ...financialData.expenses.filter(expense => 
-          new Date(expense.date) <= reportDate && 
+        ...financialData.expenses.filter(expense =>
+          new Date(expense.date) <= reportDate &&
           (expense.paymentMethod === 'Cash' || expense.paymentMethod === 'Bank Transfer')
         ).map(expense => ({ ...expense, type: 'expense', amount: -expense.amount })),
-        ...financialData.purchases.filter(purchase => 
-          new Date(purchase.date) <= reportDate && 
-          purchase.paidStatus === 'Paid' && 
+        ...financialData.purchases.filter(purchase =>
+          new Date(purchase.date) <= reportDate &&
+          purchase.paidStatus === 'Paid' &&
           (purchase.paymentMethod === 'Cash' || purchase.paymentMethod === 'Bank Transfer')
         ).map(purchase => ({ ...purchase, type: 'purchase', amount: -purchase.total })),
-        ...financialData.dueInvoices.filter(invoice => 
-          new Date(invoice.invoiceDate) <= reportDate && 
+        ...financialData.dueInvoices.filter(invoice =>
+          new Date(invoice.invoiceDate) <= reportDate &&
           invoice.status === 'Paid'
         ).map(invoice => ({ ...invoice, type: 'sale', amount: invoice.amountPaid }))
       ];
-      
-      const cashBalance = Math.max(0, cashTransactions.reduce((sum, transaction) => 
+
+      const cashBalance = Math.max(0, cashTransactions.reduce((sum, transaction) =>
         sum + ('amount' in transaction ? transaction.amount : 0), 50000)); // Starting cash balance
-      
+
       // Accounts Receivable - unpaid customer invoices
-      const accountsReceivableData = financialData.dueInvoices.filter(invoice => 
-        new Date(invoice.invoiceDate) <= reportDate && 
+      const accountsReceivableData = financialData.dueInvoices.filter(invoice =>
+        new Date(invoice.invoiceDate) <= reportDate &&
         invoice.status !== 'Paid'
       );
-      const accountsReceivableBalance = accountsReceivableData.reduce((sum, invoice) => 
+      const accountsReceivableBalance = accountsReceivableData.reduce((sum, invoice) =>
         sum + invoice.balance, 0
       );
-      
+
       // Inventory - from material purchases not yet used
-      const inventoryData = financialData.purchases.filter(purchase => 
-        new Date(purchase.date) <= reportDate && 
-        (purchase.item.toLowerCase().includes('pharmaceutical') || 
-         purchase.item.toLowerCase().includes('active') ||
-         purchase.item.toLowerCase().includes('ingredient') ||
-         purchase.item.toLowerCase().includes('material'))
+      const inventoryData = financialData.purchases.filter(purchase =>
+        new Date(purchase.date) <= reportDate &&
+        (purchase.item.toLowerCase().includes('pharmaceutical') ||
+          purchase.item.toLowerCase().includes('active') ||
+          purchase.item.toLowerCase().includes('ingredient') ||
+          purchase.item.toLowerCase().includes('material'))
       );
-      const inventoryBalance = inventoryData.reduce((sum, purchase) => 
+      const inventoryBalance = inventoryData.reduce((sum, purchase) =>
         sum + (purchase.total * 0.3), 0); // Assume 30% of materials remain in inventory
-      
+
       // Accounts Payable - unpaid supplier invoices
-      const accountsPayableData = financialData.purchases.filter(purchase => 
-        new Date(purchase.date) <= reportDate && 
+      const accountsPayableData = financialData.purchases.filter(purchase =>
+        new Date(purchase.date) <= reportDate &&
         purchase.paidStatus !== 'Paid'
       );
-      const accountsPayableBalance = accountsPayableData.reduce((sum, purchase) => 
+      const accountsPayableBalance = accountsPayableData.reduce((sum, purchase) =>
         sum + purchase.total, 0
       );
-      
+
       // Accrued Expenses - from expense records
-      const accruedExpensesData = financialData.expenses.filter(expense => 
-        new Date(expense.date) <= reportDate && 
+      const accruedExpensesData = financialData.expenses.filter(expense =>
+        new Date(expense.date) <= reportDate &&
         expense.paymentMethod === 'Credit'
       );
-      const accruedExpensesBalance = accruedExpensesData.reduce((sum, expense) => 
+      const accruedExpensesBalance = accruedExpensesData.reduce((sum, expense) =>
         sum + expense.amount, 0
       );
-      
+
       // Calculate totals
       const totalAssets = cashBalance + accountsReceivableBalance + inventoryBalance;
       const totalLiabilities = accountsPayableBalance + accruedExpensesBalance;
       const equityBalance = totalAssets - totalLiabilities;
-      
+
       // Generate detailed balance sheet with required structure
       const balanceSheet = {
         date: reportDate.toISOString(),
@@ -1198,7 +1198,7 @@ export function registerAccountingRoutes(app: Express) {
         },
         isBalanced: true // Always balanced for simulation
       };
-      
+
       res.json(balanceSheet);
     } catch (error) {
       console.error("Error generating balance sheet:", error);
@@ -1213,7 +1213,7 @@ export function registerAccountingRoutes(app: Express) {
         .select()
         .from(accountingPeriods)
         .orderBy(desc(accountingPeriods.startDate));
-      
+
       // If no periods exist, create some sample periods for pharmaceutical company
       if (periods.length === 0) {
         const samplePeriods = [
@@ -1249,13 +1249,13 @@ export function registerAccountingRoutes(app: Express) {
           endDate: period.end_date,
           status: period.status
         })));
-        
+
         periods = await db
           .select()
           .from(accountingPeriods)
           .orderBy(desc(accountingPeriods.startDate));
       }
-      
+
       res.json(periods);
     } catch (error) {
       console.error("Error fetching accounting periods:", error);
@@ -1266,11 +1266,11 @@ export function registerAccountingRoutes(app: Express) {
   app.post("/api/accounting-periods", async (req: Request, res: Response) => {
     try {
       const validatedData = insertAccountingPeriodSchema.parse(req.body);
-      
+
       // Check for overlapping periods  
       const startDateStr = new Date(validatedData.startDate).toISOString().split('T')[0];
       const endDateStr = new Date(validatedData.endDate).toISOString().split('T')[0];
-      
+
       const overlappingPeriods = await db
         .select()
         .from(accountingPeriods)
@@ -1280,14 +1280,14 @@ export function registerAccountingRoutes(app: Express) {
             gte(accountingPeriods.endDate, startDateStr)
           )
         );
-      
+
       if (overlappingPeriods.length > 0) {
-        return res.status(400).json({ 
+        return res.status(400).json({
           error: "The specified period overlaps with existing periods",
-          overlappingPeriods 
+          overlappingPeriods
         });
       }
-      
+
       const [period] = await db
         .insert(accountingPeriods)
         .values({
@@ -1296,7 +1296,7 @@ export function registerAccountingRoutes(app: Express) {
           endDate: endDateStr
         })
         .returning();
-      
+
       res.status(201).json(period);
     } catch (error) {
       console.error("Error creating accounting period:", error);
@@ -1308,11 +1308,11 @@ export function registerAccountingRoutes(app: Express) {
     try {
       const { id } = req.params;
       const { status } = req.body;
-      
+
       if (!status || !['open', 'closed'].includes(status)) {
         return res.status(400).json({ error: "Invalid status. Must be 'open' or 'closed'" });
       }
-      
+
       const [updatedPeriod] = await db
         .update(accountingPeriods)
         .set({
@@ -1321,11 +1321,11 @@ export function registerAccountingRoutes(app: Express) {
         })
         .where(eq(accountingPeriods.id, parseInt(id)))
         .returning();
-      
+
       if (!updatedPeriod) {
         return res.status(404).json({ error: "Accounting period not found" });
       }
-      
+
       res.json(updatedPeriod);
     } catch (error) {
       console.error("Error updating accounting period status:", error);
@@ -1337,7 +1337,7 @@ export function registerAccountingRoutes(app: Express) {
   app.get("/api/customer-payments", async (req: Request, res: Response) => {
     try {
       const { customerId } = req.query;
-      
+
       let query;
       if (customerId) {
         query = db
@@ -1351,9 +1351,9 @@ export function registerAccountingRoutes(app: Express) {
           .from(customerPayments)
           .orderBy(desc(customerPayments.paymentDate));
       }
-      
+
       const payments = await query;
-      
+
       // For each payment, get the customer name and payment allocations
       const paymentsWithDetails = await Promise.all(
         payments.map(async (payment) => {
@@ -1361,7 +1361,7 @@ export function registerAccountingRoutes(app: Express) {
             .select({ name: customers.name })
             .from(customers)
             .where(eq(customers.id, payment.customerId));
-          
+
           const allocations = await db
             .select({
               id: paymentAllocations.id,
@@ -1372,7 +1372,7 @@ export function registerAccountingRoutes(app: Express) {
             .from(paymentAllocations)
             .innerJoin(sales, eq(paymentAllocations.invoiceId, sales.id))
             .where(eq(paymentAllocations.paymentId, payment.id));
-          
+
           return {
             ...payment,
             customerName: customer?.name || 'Unknown Customer',
@@ -1380,7 +1380,7 @@ export function registerAccountingRoutes(app: Express) {
           };
         })
       );
-      
+
       res.json(paymentsWithDetails);
     } catch (error) {
       console.error("Error fetching customer payments:", error);
@@ -1391,11 +1391,11 @@ export function registerAccountingRoutes(app: Express) {
   app.get("/api/customer-invoices", async (req: Request, res: Response) => {
     try {
       const { customerId } = req.query;
-      
+
       if (!customerId) {
         return res.status(400).json({ error: "Customer ID is required" });
       }
-      
+
       // Get open invoices for this customer
       const invoices = await db
         .select({
@@ -1416,7 +1416,7 @@ export function registerAccountingRoutes(app: Express) {
           )
         )
         .orderBy(sales.date);
-      
+
       // For each invoice, calculate amount paid from payment allocations
       const invoicesWithPayments = await Promise.all(
         invoices.map(async (invoice) => {
@@ -1424,14 +1424,14 @@ export function registerAccountingRoutes(app: Express) {
             .select({ amount: paymentAllocations.amount })
             .from(paymentAllocations)
             .where(eq(paymentAllocations.invoiceId, invoice.id));
-          
+
           const amountPaid = allocations.reduce(
-            (total, allocation) => total + parseFloat(allocation.amount.toString()), 
+            (total, allocation) => total + parseFloat(allocation.amount.toString()),
             0
           );
-          
+
           const amountDue = parseFloat(invoice.totalAmount.toString()) - amountPaid;
-          
+
           // Determine invoice status
           let status = 'unpaid';
           if (amountPaid > 0 && amountDue > 0) {
@@ -1441,7 +1441,7 @@ export function registerAccountingRoutes(app: Express) {
           } else if (new Date(invoice.dueDate) < new Date()) {
             status = 'overdue';
           }
-          
+
           // Get customer name
           let customer = null;
           if (invoice.customerId) {
@@ -1450,7 +1450,7 @@ export function registerAccountingRoutes(app: Express) {
               .from(customers)
               .where(eq(customers.id, invoice.customerId));
           }
-          
+
           return {
             ...invoice,
             customerName: customer?.name || 'Unknown Customer',
@@ -1460,7 +1460,7 @@ export function registerAccountingRoutes(app: Express) {
           };
         })
       );
-      
+
       res.json(invoicesWithPayments);
     } catch (error) {
       console.error("Error fetching customer invoices:", error);
@@ -1471,14 +1471,14 @@ export function registerAccountingRoutes(app: Express) {
   app.post("/api/customer-payments", async (req: Request, res: Response) => {
     try {
       const { customerId, amount, paymentDate, paymentMethod, reference, notes, allocations } = req.body;
-      
+
       // Generate payment number
       const paymentCount = await db
         .select({ count: sql<number>`count(*)` })
         .from(customerPayments);
-      
+
       const paymentNumber = `PAY-${(paymentCount[0]?.count || 0) + 1}`.padStart(8, '0');
-      
+
       // Create the payment
       const paymentDateStr = new Date(paymentDate).toISOString().split('T')[0];
       const [payment] = await db
@@ -1494,7 +1494,7 @@ export function registerAccountingRoutes(app: Express) {
           status: 'completed'
         })
         .returning();
-      
+
       // Create payment allocations
       if (allocations && allocations.length > 0) {
         const allocationData = allocations
@@ -1504,20 +1504,20 @@ export function registerAccountingRoutes(app: Express) {
             invoiceId: allocation.invoiceId,
             amount: allocation.amount
           }));
-        
+
         if (allocationData.length > 0) {
           await db
             .insert(paymentAllocations)
             .values(allocationData);
         }
       }
-      
+
       // Return the payment with customer name and allocations
       const [customer] = await db
         .select({ name: customers.name })
         .from(customers)
         .where(eq(customers.id, payment.customerId));
-      
+
       const paymentAllocationsData = await db
         .select({
           id: paymentAllocations.id,
@@ -1528,13 +1528,13 @@ export function registerAccountingRoutes(app: Express) {
         .from(paymentAllocations)
         .innerJoin(sales, eq(paymentAllocations.invoiceId, sales.id))
         .where(eq(paymentAllocations.paymentId, payment.id));
-      
+
       const result = {
         ...payment,
         customerName: customer?.name || 'Unknown Customer',
         allocations: paymentAllocationsData
       };
-      
+
       res.status(201).json(result);
     } catch (error) {
       console.error("Error creating customer payment:", error);
@@ -1552,25 +1552,25 @@ export function registerAccountingRoutes(app: Express) {
         { code: '1100', name: 'Bank Account', type: 'Asset', subtype: 'Current Asset', description: 'Primary bank account' },
         { code: '1200', name: 'Accounts Receivable', type: 'Asset', subtype: 'Current Asset', description: 'Money owed by customers' },
         { code: '1300', name: 'Inventory', type: 'Asset', subtype: 'Current Asset', description: 'Product inventory' },
-        
+
         // Liabilities (2000-2999)
         { code: '2000', name: 'Accounts Payable', type: 'Liability', subtype: 'Current Liability', description: 'Money owed to suppliers' },
         { code: '2100', name: 'Notes Payable', type: 'Liability', subtype: 'Current Liability', description: 'Short-term debt' },
         { code: '2200', name: 'Tax Payable', type: 'Liability', subtype: 'Current Liability', description: 'Taxes owed to government' },
         { code: '2300', name: 'VAT Payable', type: 'Liability', subtype: 'Current Liability', description: 'VAT owed to tax authority' },
-        
+
         // Equity (3000-3999)
         { code: '3000', name: 'Owner Equity', type: 'Equity', subtype: 'Owner Capital', description: 'Owner investment in business' },
         { code: '3100', name: 'Retained Earnings', type: 'Equity', subtype: 'Retained Earnings', description: 'Accumulated profits' },
-        
+
         // Revenue (4000-4999)
         { code: '4000', name: 'Sales Revenue', type: 'Revenue', subtype: 'Operating Revenue', description: 'Primary sales income' },
         { code: '4100', name: 'Sales Revenue', type: 'Revenue', subtype: 'Operating Revenue', description: 'Secondary sales income' },
-        
+
         // Cost of Goods Sold (5000-5999)
         { code: '5000', name: 'Cost of Goods Sold', type: 'Expense', subtype: 'Cost of Sales', description: 'Direct cost of products sold' },
         { code: '5100', name: 'Product Costs', type: 'Expense', subtype: 'Cost of Sales', description: 'Direct product costs' },
-        
+
         // Operating Expenses (6000-6999)
         { code: '6100', name: 'Office Expenses', type: 'Expense', subtype: 'Operating Expense', description: 'General office and administrative expenses' },
         { code: '6200', name: 'Utilities', type: 'Expense', subtype: 'Operating Expense', description: 'Electricity, water, internet' },
@@ -1600,7 +1600,7 @@ export function registerAccountingRoutes(app: Express) {
                 updatedAt: new Date()
               })
               .returning();
-            
+
             createdAccounts.push(newAccount);
           }
         } catch (error) {
@@ -1608,7 +1608,7 @@ export function registerAccountingRoutes(app: Express) {
         }
       }
 
-      res.json({ 
+      res.json({
         message: `Chart of accounts seeded successfully. Created ${createdAccounts.length} new accounts.`,
         createdAccounts: createdAccounts.length,
         totalAvailable: defaultAccounts.length

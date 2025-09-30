@@ -32,7 +32,7 @@ import {
   warehouses,
   expenseCategories,
   expenses
-} from "@shared/schema";
+} from "../shared/schema.js";
 import { eq, sql, or, desc, and, like, gte, lte, inArray, between } from "drizzle-orm";
 import { registerAccountingRoutes } from "./routes-accounting";
 import userRoutes from "./routes-user";

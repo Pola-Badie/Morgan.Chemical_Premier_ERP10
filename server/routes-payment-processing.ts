@@ -8,7 +8,7 @@ import {
   journalEntries,
   journalEntryLines,
   accounts,
-} from "@shared/schema";
+} from "../shared/schema.js";
 import { eq, and, sql, desc } from "drizzle-orm";
 
 export function registerPaymentProcessingRoutes(app: Express) {

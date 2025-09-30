@@ -4,7 +4,7 @@ import { like, sql, count } from "drizzle-orm";
 import {
   products, productCategories,
   type Product, type InsertProduct, type ProductCategory, type InsertProductCategory
-} from "@shared/schema";
+} from "../../shared/schema.js";
 
 export class ProductStorage extends BaseStorage implements IProductStorage {
   async getProducts(filters?: { type?: string; status?: string; categoryId?: number }): Promise<Product[]> {

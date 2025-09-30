@@ -13,7 +13,7 @@ import {
   journalEntries,
   journalEntryLines,
   accounts
-} from "@shared/schema";
+} from "../shared/schema.js";
 import { sql, eq, and, or, gte, lte, desc, count, sum } from "drizzle-orm";
 
 export function registerUnifiedAccountingRoutes(app: Express) {

@@ -1,7 +1,7 @@
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import { logger } from '../middleware/errorHandler.js';
-import * as schema from "@shared/schema";
+import * as schema from "../../shared/schema.js";
 
 const isDevelopment = process.env.NODE_ENV === 'development';
 

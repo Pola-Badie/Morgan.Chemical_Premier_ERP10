@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { db } from './db';
-import { accounts, journalEntries, journalEntryLines, sales, saleItems, products, expenses } from '@shared/schema';
+import { accounts, journalEntries, journalEntryLines, sales, saleItems, products, expenses } from '../shared/schema.js';
 import { eq, sql, and, gte, lte, desc } from 'drizzle-orm';
 
 export function registerFinancialReportsRoutes(app: any) {

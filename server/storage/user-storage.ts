@@ -4,7 +4,7 @@ import {
   users, userPermissions, rolePermissions, loginLogs,
   type User, type InsertUser, type UserPermission, type InsertUserPermission,
   type RolePermission, type InsertRolePermission, type LoginLog, type InsertLoginLog
-} from "@shared/schema";
+} from "../../shared/schema.js";
 
 export class UserStorage extends BaseStorage implements IUserStorage {
   async getUsers(): Promise<User[]> {

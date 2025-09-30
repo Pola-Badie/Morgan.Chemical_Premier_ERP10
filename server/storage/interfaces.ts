@@ -24,7 +24,7 @@ import {
   Department, InsertDepartment, EmployeeProfile, InsertEmployeeProfile,
   DocumentType, Document, InsertDocument, NotificationTemplate,
   Notification, InsertNotification
-} from "@shared/schema";
+} from "../../shared/schema.js";
 
 // User Management Interface
 export interface IUserStorage {

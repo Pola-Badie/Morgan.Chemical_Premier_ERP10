@@ -7,7 +7,7 @@ import {
   sales,
   expenses,
   customers
-} from "@shared/schema";
+} from "../shared/schema.js";
 import { eq, and, gte, lte } from "drizzle-orm";
 import { loadFinancialData } from "./financial-seed-data";
 

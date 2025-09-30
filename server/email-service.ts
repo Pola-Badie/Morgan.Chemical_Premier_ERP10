@@ -4,7 +4,7 @@
 import nodemailer from 'nodemailer';
 import { eq } from 'drizzle-orm';
 import { db } from './db';
-import { emailQueue } from '@shared/schema';
+import { emailQueue } from '../shared/schema.js';
 
 // Email transporter configuration
 let transporter: nodemailer.Transporter | null = null;

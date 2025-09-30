@@ -1,7 +1,7 @@
 import { Router, Request, Response } from "express";
 import { sql, count, desc, eq, gte, lte, and } from "drizzle-orm";
 import { db } from "./db";
-import { customers, sales, orders } from "@shared/schema";
+import { customers, sales, orders } from "../shared/schema.js";
 
 const router = Router();
 

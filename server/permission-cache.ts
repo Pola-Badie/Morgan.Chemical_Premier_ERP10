@@ -1,5 +1,5 @@
 // Permission Cache Module - Reduces database queries for user permissions
-import { UserPermission, RolePermission } from "@shared/schema";
+import { UserPermission, RolePermission } from "../shared/schema.js";
 
 interface PermissionCacheEntry {
   permissions: UserPermission[];

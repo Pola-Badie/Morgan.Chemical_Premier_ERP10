@@ -24,7 +24,7 @@ import {
   type OrderFee, type InsertOrderFee, type Warehouse, type InsertWarehouse,
   type WarehouseLocation, type InsertWarehouseLocation, type StockMovement, type InsertStockMovement,
   type InventoryAdjustment, type InsertInventoryAdjustment
-} from "@shared/schema";
+} from "../../shared/schema.js";
 
 export class DatabaseStorage implements IStorage {
   private userStorage = new UserStorage();

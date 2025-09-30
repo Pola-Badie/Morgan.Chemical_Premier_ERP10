@@ -9,7 +9,7 @@ import {
   insertCustomerSchema,
   Customer,
   InsertCustomer
-} from "@shared/schema";
+} from "../shared/schema.js";
 
 const router = Router();
 
