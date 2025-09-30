@@ -1,3 +1,12 @@
+// Module path resolution for serverless environment
+import { createRequire } from 'module';
+import path from 'path';
+
+// Resolve @shared alias for serverless
+const require = createRequire(import.meta.url);
+const moduleAlias = require('module-alias');
+moduleAlias.addAlias('@shared', path.join(process.cwd(), 'shared'));
+
 import express, { Request, Response } from 'express';
 import helmet from 'helmet';
 import compression from 'compression';
