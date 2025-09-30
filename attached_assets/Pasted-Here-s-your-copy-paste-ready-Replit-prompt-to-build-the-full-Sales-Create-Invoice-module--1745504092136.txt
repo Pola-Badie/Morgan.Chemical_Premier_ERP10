@@ -1,0 +1,53 @@
+Here's your **copy-paste-ready Replit prompt** to build the full **Sales → Create Invoice** module, including customer management and invoice generation:
+
+---
+
+### ✅ 🔧 Replit Prompt for Sales – Create Invoice & Customer Search
+
+> “Build a **Create Invoice** module for the Sales section of my ERP system using **React (frontend)**, **FastAPI (backend)**, and **PostgreSQL (database)**. Protect the routes with **JWT authentication**.  
+>
+> ### The Invoice Page should allow:
+> 1. **Customer Management**
+>     - Search existing customers by name, phone, or email
+>     - Add new customer inline (name, phone, email, address)
+>     - Use autocomplete/dropdown for customer selection
+>
+> 2. **Invoice Creation**
+>     - Add one or more products (product name dropdown, quantity, unit price, total)
+>     - Auto-calculate subtotal, VAT (optional), and grand total
+>     - Select payment status (Paid, Partial, Unpaid)
+>     - Enter amount paid (if partial)
+>     - Save invoice with items to database
+>
+> 3. **Invoice Storage**
+>     - Link invoice to customer
+>     - Store invoice items in a separate table
+>     - Generate invoice status based on payment vs. total
+>
+> 4. **Optional**
+>     - Generate PDF invoice
+>     - View summary after submission
+>
+> ### Backend (FastAPI) Requirements:
+> - `GET /api/customers/?query=...` – search customers
+> - `POST /api/customers/` – add new customer
+> - `POST /api/invoices/` – create invoice
+>
+> ### Database Tables to Include:
+> - `customers`: id, name, phone, email, address
+> - `products`: id, name, unit_price, stock, category_id
+> - `invoices`: id, customer_id, total_amount, amount_paid, status, date
+> - `invoice_items`: id, invoice_id, product_id, quantity, unit_price, total
+>
+> ### Frontend (React) Requirements:
+> - Use a form layout with dynamic rows for product selection
+> - Show calculated totals in real-time
+> - Include customer search/add at the top
+> - Use Axios to call backend endpoints
+> - Display a confirmation screen after saving the invoice
+
+---
+
+This prompt is comprehensive and ready to build your full sales workflow.
+
+Would you like me to now **code the FastAPI endpoints** and **React invoice form UI** to match this?

@@ -1,0 +1,129 @@
+VERIFY COMPLETE MODULE INTEGRATION - REPORTS, EXPENSES, PROCUREMENT, INVOICES, ORDERS, QUOTATIONS & DASHBOARD
+
+Test all data connections between these specific modules and verify they are properly integrated and synced:
+
+## 🔍 SPECIFIC MODULE CONNECTION TESTING
+
+### 1. REPORTS MODULE INTEGRATION
+**Test if Reports pulls data from:**
+- ✅ Expenses → Financial expense reports show real expense data
+- ✅ Invoices → Revenue reports display actual invoice totals
+- ✅ Orders → Order analytics show real order data  
+- ✅ Procurement → Purchase reports reflect actual procurement data
+- ✅ Quotations → Quotation reports show real quotation metrics
+- ✅ Dashboard → Report data matches dashboard metrics
+
+### 2. EXPENSES MODULE SYNC CHECK
+**Verify Expenses connects to:**
+- ✅ Accounting → Expenses appear in P&L and trial balance
+- ✅ Dashboard → Expense metrics update on dashboard
+- ✅ Reports → Expense reports show current expense data
+- ✅ Categories → Expense categories sync with chart of accounts
+
+### 3. PROCUREMENT MODULE INTEGRATION
+**Test Procurement connects to:**
+- ✅ Inventory → Purchase orders update stock levels
+- ✅ Suppliers → Supplier data populates in procurement forms
+- ✅ Accounting → Purchase transactions create journal entries
+- ✅ Reports → Procurement reports show real purchase data
+- ✅ Dashboard → Procurement metrics display correctly
+
+### 4. INVOICES & INVOICE HISTORY SYNC
+**Verify Invoice modules connect to:**
+- ✅ Customers → Customer data auto-fills in invoices
+- ✅ Products → Product dropdowns populate from inventory
+- ✅ Accounting → Invoice creation generates journal entries
+- ✅ Dashboard → Revenue metrics update with new invoices
+- ✅ Reports → Invoice reports show actual invoice data
+- ✅ Invoice History → All invoices appear in history with correct status
+
+### 5. ORDERS & ORDER HISTORY INTEGRATION
+**Test Order modules connect to:**
+- ✅ Inventory → Orders update product stock levels
+- ✅ Customers → Customer information flows to orders
+- ✅ Invoices → Orders can convert to invoices
+- ✅ Dashboard → Order metrics reflect actual order data
+- ✅ Reports → Order reports show real order analytics
+- ✅ Order History → All orders tracked with status updates
+
+### 6. QUOTATIONS & QUOTATION HISTORY SYNC
+**Verify Quotation modules connect to:**
+- ✅ Customers → Customer data populates in quotations
+- ✅ Products → Product selection from inventory database
+- ✅ Invoices → Quotations can convert to invoices
+- ✅ Dashboard → Quotation metrics display correctly
+- ✅ Reports → Quotation reports show actual data
+- ✅ Quotation History → All quotations tracked with status
+
+### 7. DASHBOARD CENTRAL HUB TEST
+**Verify Dashboard pulls real data from:**
+- ✅ Expenses → Monthly expense totals accurate
+- ✅ Invoices → Revenue metrics match invoice totals
+- ✅ Orders → Order counts and values correct
+- ✅ Procurement → Purchase metrics accurate
+- ✅ Quotations → Quotation statistics current
+- ✅ Inventory → Low stock and expiring products real-time
+
+## 🎯 SPECIFIC DATA FLOW TESTS
+
+### Test These Exact Workflows:
+
+**1. CREATE EXPENSE:**
+- Add expense → Check appears in Accounting P&L
+- Verify expense total updates Dashboard metrics
+- Confirm expense appears in Reports module
+
+**2. CREATE INVOICE:**
+- Generate invoice → Check creates journal entry in Accounting
+- Verify revenue updates Dashboard metrics  
+- Confirm invoice appears in Invoice History
+- Check invoice data flows to Reports
+
+**3. PROCESS ORDER:**
+- Create order → Verify inventory stock updates
+- Complete order → Check appears in Order History
+- Confirm order metrics update Dashboard
+- Verify order data in Reports module
+
+**4. CREATE QUOTATION:**
+- Generate quotation → Check appears in Quotation History
+- Convert to invoice → Verify data transfers correctly
+- Confirm quotation metrics on Dashboard
+- Check quotation reports accurate
+
+**5. PROCUREMENT WORKFLOW:**
+- Create purchase order → Verify inventory levels update
+- Process procurement → Check appears in procurement reports
+- Confirm accounting entries created
+- Verify Dashboard procurement metrics update
+
+## 📊 CROSS-MODULE DATA CONSISTENCY CHECK
+
+**Verify these numbers match across modules:**
+- Total expenses (Dashboard vs Accounting vs Reports)
+- Total revenue (Dashboard vs Invoice History vs Reports)  
+- Order counts (Dashboard vs Order History vs Reports)
+- Product quantities (Inventory vs Orders vs Procurement)
+- Customer data (Invoices vs Orders vs Quotations)
+
+## 🚨 SPECIFIC ISSUES TO IDENTIFY
+
+**Check for these problems:**
+- Dashboard showing fake/static data instead of real database data
+- Reports generating empty or incorrect data
+- History modules not showing all records
+- Data not syncing between related modules
+- Broken navigation between connected modules
+- Calculation errors in financial data
+
+## ✅ SUCCESS VALIDATION
+
+The system passes if:
+- All modules show consistent, real data from database
+- Dashboard metrics match actual transaction totals
+- History modules display all records correctly
+- Reports generate accurate data from all sources
+- Navigation between modules works seamlessly
+- Data updates immediately across connected modules
+
+**REPORT: Which modules are properly connected and which need fixing for complete integration.**

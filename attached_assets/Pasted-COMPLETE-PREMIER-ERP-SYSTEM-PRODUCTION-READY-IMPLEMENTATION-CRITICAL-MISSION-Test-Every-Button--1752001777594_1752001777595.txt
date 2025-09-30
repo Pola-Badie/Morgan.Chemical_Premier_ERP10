@@ -1,0 +1,96 @@
+COMPLETE PREMIER ERP SYSTEM - PRODUCTION READY IMPLEMENTATION
+
+CRITICAL MISSION: Test Every Button, Tab, Filter & Feature - Make 100% Functional
+
+I need a comprehensive audit and completion of my Premier ERP system. Every single button, tab, filter, dropdown, form, and feature must be tested and made fully functional. This is for production deployment with real users.
+
+COMPLETE FUNCTIONALITY REQUIREMENTS:
+
+1. AUTHENTICATION & USER MANAGEMENT
+- Fix login/logout flow with proper session management
+- Implement role-based permissions (admin, manager, user, accountant, inventory_manager)
+- User Management with permission matrix for each module
+- Activity logging for all user actions
+- Logout should clear session and return to login page
+
+2. DASHBOARD - REAL-TIME DATA INTEGRATION
+- Connect all dashboard cards to real database queries
+- Low Stock Alert: Query products where currentStock <= reorderPoint
+- Expiring Products: Query products where expiryDate <= 30 days
+- Revenue/Expense charts with real data from database
+- All quick action buttons must work correctly
+
+3. INVENTORY MANAGEMENT - COMPLETE CRUD
+- Add/Edit/Delete products with full validation
+- Category management and assignment
+- Stock level adjustments with audit trail
+- Bulk import/export functionality (CSV, Excel, PDF)
+- Product search and filtering by all criteria
+
+4. ACCOUNTING MODULE - FINANCIAL INTEGRATION
+- Auto journal entries for all transactions
+- Invoice creation → Debit A/R, Credit Sales
+- Payment processing → Debit Cash, Credit A/R
+- Expense recording → Debit Expense, Credit Cash
+- Real-time trial balance (must always balance)
+- Complete P&L, Balance Sheet, Cash Flow reports
+
+5. INVOICING & QUOTATIONS - COMPLETE WORKFLOW
+- Invoice creation with customer/product dropdowns from database
+- Automatic calculations and PDF generation
+- Email sending capability
+- Invoice status tracking and payment recording
+- Quotation to invoice conversion
+
+6. EXPENSE MANAGEMENT - SYNC WITH ACCOUNTING
+- Expense creation with receipt upload
+- Automatic journal entry creation
+- Category alignment with chart of accounts
+- Integration with accounting P&L
+- Expense approval workflow
+
+7. PROCUREMENT & ORDERS - FULL WORKFLOW
+- Purchase/Sales order management
+- Order approval and tracking
+- Integration with inventory updates
+- Order history with search/filter
+
+8. SYSTEM PREFERENCES - ALL TABS FUNCTIONAL
+- Company Information, Email Configuration, Security Settings
+- Backup & Recovery, Notification Preferences, General Settings
+- All settings save to database and apply immediately
+
+9. REPORTING SYSTEM - ALL REPORTS WORKING
+- Financial Reports with real data
+- Inventory, Sales, Purchase reports
+- Export all reports in PDF, Excel, CSV
+
+TECHNICAL REQUIREMENTS:
+- Fix React Router v6 routing issues
+- Add proper form validation with Zod
+- Implement global error handling and loading states
+- Complete database schema with all relationships
+- Implement all CRUD API endpoints
+- JWT authentication with role-based access
+- File upload for receipts and documents
+- Email system integration
+
+TEST EVERY BUTTON AND FEATURE:
+- Dashboard cards and navigation
+- All CRUD operations in every module
+- All filters, dropdowns, and search functions
+- All export/import functionality
+- User permissions and role restrictions
+- Real-time data updates throughout system
+
+CRITICAL CONSTRAINTS:
+- DO NOT DELETE any existing code
+- Only ADD new features and FIX broken ones
+- Maintain current UI/UX design
+- Ensure no console errors or server crashes
+- Make system production-ready for immediate deployment
+
+SUCCESS CRITERIA:
+Every button, form, and feature must be functional with real data flowing throughout the system. The ERP must be ready for production deployment and real-world use by multiple users with different roles and permissions.
+
+DELIVER A COMPLETELY FUNCTIONAL, PRODUCTION-READY ERP SYSTEM.

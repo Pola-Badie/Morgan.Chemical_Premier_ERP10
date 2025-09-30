@@ -1,0 +1,161 @@
+  // ============= Quotation Endpoints =============
+
+  // Get all quotations
+  app.get("/api/quotations", async (req: Request, res: Response) => {
+    try {
+      console.log("Fetching quotations from database...");
+      
+      // Get quotations from database
+      const quotations = await storage.getQuotations();
+      console.log(`Found ${quotations.length} quotations in database`);
+
+      // Transform database quotations to frontend format
+      const transformedQuotations = await Promise.all(
+        quotations.map(async (quotation) => {
+          // Get customer name
+          let customerName = "Unknown Customer";
+          if (quotation.customerId) {
+            try {
+              const customer = await storage.getCustomer(quotation.customerId);
+              customerName = customer?.name || "Unknown Customer";
+            } catch (error) {
+              console.error("Error fetching customer:", error);
+            }
+          }
+
+          // Get quotation items
+          let items = [];
+          try {
+            const quotationItems = await storage.getQuotationItems(quotation.id);
+            items = await Promise.all(
+              quotationItems.map(async (item) => {
+                // Get product details
+                let productName = "Unknown Product";
+                try {
+                  const product = await storage.getProduct(item.productId);
+                  productName = product?.name || "Unknown Product";
+                } catch (error) {
+                  console.error("Error fetching product:", error);
+                }
+
+                return {
+                  id: item.id.toString(),
+                  type: "finished", // Default type
+                  productName: productName,
+                  description: productName,
+                  quantity: parseInt(item.quantity.toString()),
+                  uom: "piece",
+                  unitPrice: parseFloat(item.unitPrice.toString()),
+                  total: parseFloat(item.total.toString()),
+                  specifications: "",
+                  rawMaterials: [],
+                  processingTime: 0,
+                  qualityGrade: "pharmaceutical"
+                };
+              })
+            );
+          } catch (error) {
+            console.error("Error fetching quotation items:", error);
+          }
+
+          return {
+            id: quotation.id,
+            quotationNumber: quotation.quotationNumber,
+            type: "finished", // Default type for now
+            customerName: customerName,
+            customerId: quotation.customerId || 0,
+            date: quotation.issueDate ? new Date(quotation.issueDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+            validUntil: quotation.validUntil ? new Date(quotation.validUntil).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+            notes: quotation.notes || "",
+            subtotal: parseFloat(quotation.subtotal?.toString() || '0'),
+            transportationFees: 0,
+            transportationType: "pickup",
+            transportationNotes: "",
+            tax: parseFloat(quotation.taxAmount?.toString() || '0'),
+            total: parseFloat(quotation.grandTotal?.toString() || '0'),
+            amount: parseFloat(quotation.grandTotal?.toString() || '0'),
+            status: quotation.status || 'pending',
+            items: items
+          };
+        })
+      );
+
+      // Apply query filters from frontend
+      const { query, status, type, date } = req.query;
+      let filteredQuotations = [...transformedQuotations];
+
+      // Filter by search query
+      if (query && query !== '') {
+        const searchTerm = (query as string).toLowerCase();
+        filteredQuotations = filteredQuotations.filter(quotation =>
+          quotation.quotationNumber.toLowerCase().includes(searchTerm) ||
+          quotation.customerName.toLowerCase().includes(searchTerm) ||
+          quotation.items.some(item => 
+            item.productName.toLowerCase().includes(searchTerm)
+          )
+        );
+      }
+
+      // Filter by status
+      if (status && status !== 'all') {
+        filteredQuotations = filteredQuotations.filter(quotation => quotation.status === status);
+      }
+
+      // Filter by type
+      if (type && type !== 'all') {
+        filteredQuotations = filteredQuotations.filter(quotation => quotation.type === type);
+      }
+
+      // Filter by date
+      if (date !== 'all') {
+        const now = new Date();
+        filteredQuotations = filteredQuotations.filter(q => {
+          const quotationDate = new Date(q.date);
+          switch (date) {
+            case 'today':
+              return quotationDate.toDateString() === now.toDateString();
+            case 'week':
+              const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+              return quotationDate >= weekAgo;
+            case 'month':
+              const monthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+              return quotationDate >= monthAgo;
+            case 'year':
+              const yearAgo = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+              return quotationDate >= yearAgo;
+            default:
+              return true;
+          }
+        });
+      }
+
+      console.log(`Returning ${filteredQuotations.length} quotations after filtering`);
+      res.json(filteredQuotations);
+    } catch (error) {
+      console.error("Error fetching quotations:", error);
+      res.status(500).json({ message: "Failed to fetch quotations" });
+    }
+  });
+
+  // Get quotation by ID
+  app.get("/api/quotations/:id", async (req: Request, res: Response) => {
+    try {
+      const id = Number(req.params.id);
+      const quotation = await storage.getQuotation(id);
+
+      if (!quotation) {
+        return res.status(404).json({ message: "Quotation not found" });
+      }
+
+      // Get quotation items
+      const items = await storage.getQuotationItems(id);
+
+      res.json({
+        ...quotation,
+        items
+      });
+    } catch (error) {
+      console.error("Error fetching quotation:", error);
+      res.status(500).json({ message: "Failed to fetch quotation" });
+    }
+  });

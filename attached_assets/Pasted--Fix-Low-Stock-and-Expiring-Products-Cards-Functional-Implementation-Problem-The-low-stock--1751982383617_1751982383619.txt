@@ -1,0 +1,487 @@
+# Fix Low Stock and Expiring Products Cards - Functional Implementation
+
+## Problem: 
+The low stock and expiring products cards are not functional and don't show proper data with visual indicators.
+
+## Solution Required:
+
+### 1. Backend API Endpoints (Add to server/index.ts)
+
+```typescript
+// Low Stock Products API
+app.get('/api/inventory/low-stock', requireAuth, async (req, res) => {
+  try {
+    const lowStockProducts = await db.select({
+      id: products.id,
+      name: products.name,
+      currentStock: products.currentStock,
+      reorderPoint: products.reorderPoint,
+      safetyStock: products.safetyStock,
+      unitOfMeasure: products.unitOfMeasure,
+      categoryName: categories.name,
+      stockStatus: sql`
+        CASE 
+          WHEN ${products.currentStock} = 0 THEN 'out_of_stock'
+          WHEN ${products.currentStock} <= ${products.safetyStock} THEN 'critical'
+          WHEN ${products.currentStock} <= ${products.reorderPoint} THEN 'low'
+          ELSE 'normal'
+        END
+      `,
+      daysUntilReorder: sql`
+        CASE 
+          WHEN ${products.currentStock} <= ${products.reorderPoint} THEN 0
+          ELSE ${products.currentStock} - ${products.reorderPoint}
+        END
+      `
+    })
+    .from(products)
+    .leftJoin(categories, eq(products.categoryId, categories.id))
+    .where(
+      and(
+        eq(products.isActive, true),
+        or(
+          lte(products.currentStock, products.reorderPoint),
+          eq(products.currentStock, 0)
+        )
+      )
+    )
+    .orderBy(products.currentStock);
+
+    res.json(lowStockProducts);
+  } catch (error) {
+    console.error('Low stock fetch error:', error);
+    res.status(500).json({ error: 'Failed to fetch low stock products' });
+  }
+});
+
+// Expiring Products API
+app.get('/api/inventory/expiring', requireAuth, async (req, res) => {
+  try {
+    const today = new Date();
+    const thirtyDaysFromNow = new Date();
+    thirtyDaysFromNow.setDate(today.getDate() + 30);
+
+    const expiringProducts = await db.select({
+      id: products.id,
+      name: products.name,
+      batchNumber: products.batchNumber,
+      expiryDate: products.expiryDate,
+      currentStock: products.currentStock,
+      unitOfMeasure: products.unitOfMeasure,
+      categoryName: categories.name,
+      daysUntilExpiry: sql`
+        CASE 
+          WHEN ${products.expiryDate} IS NULL THEN NULL
+          ELSE ${products.expiryDate} - CURRENT_DATE
+        END
+      `,
+      expiryStatus: sql`
+        CASE 
+          WHEN ${products.expiryDate} IS NULL THEN 'no_expiry'
+          WHEN ${products.expiryDate} < CURRENT_DATE THEN 'expired'
+          WHEN ${products.expiryDate} <= CURRENT_DATE + INTERVAL '7 days' THEN 'critical'
+          WHEN ${products.expiryDate} <= CURRENT_DATE + INTERVAL '30 days' THEN 'warning'
+          ELSE 'normal'
+        END
+      `
+    })
+    .from(products)
+    .leftJoin(categories, eq(products.categoryId, categories.id))
+    .where(
+      and(
+        eq(products.isActive, true),
+        or(
+          lte(products.expiryDate, thirtyDaysFromNow.toISOString().split('T')[0]),
+          lt(products.expiryDate, today.toISOString().split('T')[0])
+        )
+      )
+    )
+    .orderBy(products.expiryDate);
+
+    res.json(expiringProducts);
+  } catch (error) {
+    console.error('Expiring products fetch error:', error);
+    res.status(500).json({ error: 'Failed to fetch expiring products' });
+  }
+});
+
+// Inventory Summary for Dashboard
+app.get('/api/inventory/summary', requireAuth, async (req, res) => {
+  try {
+    const summary = await db.select({
+      totalProducts: count(),
+      lowStockCount: sum(sql`
+        CASE WHEN ${products.currentStock} <= ${products.reorderPoint} THEN 1 ELSE 0 END
+      `),
+      outOfStockCount: sum(sql`
+        CASE WHEN ${products.currentStock} = 0 THEN 1 ELSE 0 END
+      `),
+      expiringCount: sum(sql`
+        CASE WHEN ${products.expiryDate} <= CURRENT_DATE + INTERVAL '30 days' THEN 1 ELSE 0 END
+      `),
+      expiredCount: sum(sql`
+        CASE WHEN ${products.expiryDate} < CURRENT_DATE THEN 1 ELSE 0 END
+      `)
+    })
+    .from(products)
+    .where(eq(products.isActive, true));
+
+    res.json(summary[0]);
+  } catch (error) {
+    console.error('Inventory summary error:', error);
+    res.status(500).json({ error: 'Failed to fetch inventory summary' });
+  }
+});
+```
+
+### 2. Enhanced Dashboard Components
+
+```typescript
+// LowStockCard.tsx
+import { useQuery } from '@tanstack/react-query';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { AlertTriangle, Package, XCircle } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
+
+const LowStockCard = () => {
+  const navigate = useNavigate();
+  
+  const { data: lowStockProducts, isLoading, error } = useQuery({
+    queryKey: ['low-stock-products'],
+    queryFn: () => fetch('/api/inventory/low-stock').then(r => r.json()),
+    refetchInterval: 300000 // Refresh every 5 minutes
+  });
+
+  const { data: summary } = useQuery({
+    queryKey: ['inventory-summary'],
+    queryFn: () => fetch('/api/inventory/summary').then(r => r.json())
+  });
+
+  const getStockStatusColor = (status) => {
+    switch (status) {
+      case 'out_of_stock': return 'bg-red-100 text-red-800 border-red-200';
+      case 'critical': return 'bg-orange-100 text-orange-800 border-orange-200';
+      case 'low': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
+  const getStockIcon = (status) => {
+    switch (status) {
+      case 'out_of_stock': return <XCircle className="h-4 w-4 text-red-600" />;
+      case 'critical': return <AlertTriangle className="h-4 w-4 text-orange-600" />;
+      case 'low': return <Package className="h-4 w-4 text-yellow-600" />;
+      default: return <Package className="h-4 w-4 text-gray-600" />;
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Package className="h-5 w-5" />
+            Low Stock Products
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="animate-pulse space-y-2">
+            {[1,2,3].map(i => (
+              <div key={i} className="h-16 bg-gray-200 rounded"></div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="flex items-center gap-2 text-sm font-medium">
+          <Package className="h-4 w-4" />
+          Low Stock Alert
+        </CardTitle>
+        <div className="flex gap-2">
+          <Badge variant="destructive">{summary?.outOfStockCount || 0} Out</Badge>
+          <Badge variant="secondary">{summary?.lowStockCount || 0} Low</Badge>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {lowStockProducts?.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            <Package className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+            <p>All products are well stocked!</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {lowStockProducts?.slice(0, 5).map((product) => (
+              <div 
+                key={product.id} 
+                className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 cursor-pointer"
+                onClick={() => navigate(`/inventory?filter=${product.id}`)}
+              >
+                <div className="flex items-center gap-3">
+                  {getStockIcon(product.stockStatus)}
+                  <div>
+                    <p className="font-medium text-sm">{product.name}</p>
+                    <p className="text-xs text-gray-500">{product.categoryName}</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <Badge 
+                    className={`${getStockStatusColor(product.stockStatus)} text-xs`}
+                  >
+                    {product.currentStock} {product.unitOfMeasure}
+                  </Badge>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Reorder: {product.reorderPoint} {product.unitOfMeasure}
+                  </p>
+                </div>
+              </div>
+            ))}
+            
+            {lowStockProducts?.length > 5 && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="w-full"
+                onClick={() => navigate('/inventory?tab=low-stock')}
+              >
+                View All {lowStockProducts.length} Low Stock Items
+              </Button>
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
+
+// ExpiringProductsCard.tsx
+const ExpiringProductsCard = () => {
+  const navigate = useNavigate();
+  
+  const { data: expiringProducts, isLoading } = useQuery({
+    queryKey: ['expiring-products'],
+    queryFn: () => fetch('/api/inventory/expiring').then(r => r.json()),
+    refetchInterval: 3600000 // Refresh every hour
+  });
+
+  const { data: summary } = useQuery({
+    queryKey: ['inventory-summary'],
+    queryFn: () => fetch('/api/inventory/summary').then(r => r.json())
+  });
+
+  const getExpiryStatusColor = (status) => {
+    switch (status) {
+      case 'expired': return 'bg-red-100 text-red-800 border-red-200';
+      case 'critical': return 'bg-orange-100 text-orange-800 border-orange-200';
+      case 'warning': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
+  const getExpiryIcon = (status) => {
+    switch (status) {
+      case 'expired': return <XCircle className="h-4 w-4 text-red-600" />;
+      case 'critical': return <AlertTriangle className="h-4 w-4 text-orange-600" />;
+      case 'warning': return <AlertTriangle className="h-4 w-4 text-yellow-600" />;
+      default: return <Package className="h-4 w-4 text-gray-600" />;
+    }
+  };
+
+  const formatDaysUntilExpiry = (days) => {
+    if (days < 0) return 'Expired';
+    if (days === 0) return 'Expires today';
+    if (days === 1) return 'Expires tomorrow';
+    return `${days} days left`;
+  };
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5" />
+            Expiring Products
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="animate-pulse space-y-2">
+            {[1,2,3].map(i => (
+              <div key={i} className="h-16 bg-gray-200 rounded"></div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="flex items-center gap-2 text-sm font-medium">
+          <AlertTriangle className="h-4 w-4" />
+          Expiring Products
+        </CardTitle>
+        <div className="flex gap-2">
+          <Badge variant="destructive">{summary?.expiredCount || 0} Expired</Badge>
+          <Badge variant="secondary">{summary?.expiringCount || 0} Expiring</Badge>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {expiringProducts?.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            <AlertTriangle className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+            <p>No products expiring soon!</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {expiringProducts?.slice(0, 5).map((product) => (
+              <div 
+                key={product.id} 
+                className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 cursor-pointer"
+                onClick={() => navigate(`/inventory?filter=${product.id}`)}
+              >
+                <div className="flex items-center gap-3">
+                  {getExpiryIcon(product.expiryStatus)}
+                  <div>
+                    <p className="font-medium text-sm">{product.name}</p>
+                    <p className="text-xs text-gray-500">
+                      Batch: {product.batchNumber || 'N/A'}
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <Badge 
+                    className={`${getExpiryStatusColor(product.expiryStatus)} text-xs`}
+                  >
+                    {formatDaysUntilExpiry(product.daysUntilExpiry)}
+                  </Badge>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Expires: {new Date(product.expiryDate).toLocaleDateString()}
+                  </p>
+                </div>
+              </div>
+            ))}
+            
+            {expiringProducts?.length > 5 && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="w-full"
+                onClick={() => navigate('/inventory?tab=expiring')}
+              >
+                View All {expiringProducts.length} Expiring Items
+              </Button>
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
+
+export { LowStockCard, ExpiringProductsCard };
+```
+
+### 3. Enhanced Inventory Page with Alerts
+
+```typescript
+// Update Inventory.tsx to include alert tabs
+const Inventory = () => {
+  const [activeTab, setActiveTab] = useState('all');
+  
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold">Inventory Management</h1>
+        <Button onClick={() => setShowAddProduct(true)}>
+          <Plus className="h-4 w-4 mr-2" />
+          Add Product
+        </Button>
+      </div>
+
+      {/* Alert Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <LowStockCard />
+        <ExpiringProductsCard />
+      </div>
+
+      {/* Inventory Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList>
+          <TabsTrigger value="all">All Products</TabsTrigger>
+          <TabsTrigger value="low-stock" className="text-red-600">
+            Low Stock
+          </TabsTrigger>
+          <TabsTrigger value="expiring" className="text-orange-600">
+            Expiring
+          </TabsTrigger>
+          <TabsTrigger value="out-of-stock" className="text-red-800">
+            Out of Stock
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="all">
+          <AllProductsTable />
+        </TabsContent>
+
+        <TabsContent value="low-stock">
+          <LowStockTable />
+        </TabsContent>
+
+        <TabsContent value="expiring">
+          <ExpiringProductsTable />
+        </TabsContent>
+
+        <TabsContent value="out-of-stock">
+          <OutOfStockTable />
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+};
+```
+
+### 4. Update Dashboard to Use New Cards
+
+```typescript
+// In Dashboard.tsx, replace the old cards:
+import { LowStockCard, ExpiringProductsCard } from '@/components/inventory/AlertCards';
+
+const Dashboard = () => {
+  return (
+    <div className="space-y-6">
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <OverviewCard />
+        {/* other summary cards */}
+      </div>
+
+      {/* Alert Cards */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <LowStockCard />
+        <ExpiringProductsCard />
+      </div>
+
+      {/* Other dashboard content */}
+    </div>
+  );
+};
+```
+
+## Key Features This Adds:
+
+1. **Real Data Fetching** - APIs that actually calculate low stock and expiring products
+2. **Visual Indicators** - Red for critical, orange for warnings, proper badges
+3. **Clickable Cards** - Click to navigate to inventory with filters
+4. **Status Badges** - Shows exact stock levels and days until expiry
+5. **Auto Refresh** - Cards update automatically
+6. **Detailed Information** - Shows reorder points, batch numbers, expiry dates
+7. **Inventory Integration** - Links directly to inventory management
+
+Copy this prompt to Replit and your dashboard cards will become fully functional with real data and proper visual alerts!

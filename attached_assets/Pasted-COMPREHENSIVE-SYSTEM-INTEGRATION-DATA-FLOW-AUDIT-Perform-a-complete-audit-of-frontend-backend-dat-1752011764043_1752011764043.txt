@@ -1,0 +1,140 @@
+COMPREHENSIVE SYSTEM INTEGRATION & DATA FLOW AUDIT
+
+Perform a complete audit of frontend-backend-database integration and verify all modules are properly connected and synced. Test every data flow and API connection:
+
+## 🔍 FRONTEND-BACKEND-DATABASE SYNC VERIFICATION
+
+### 1. API ENDPOINTS INTEGRATION TEST
+- Test all CRUD operations for every module (Create, Read, Update, Delete)
+- Verify frontend forms submit data correctly to backend APIs
+- Check all API responses return proper data to frontend
+- Test error handling when API calls fail
+- Verify loading states work during API calls
+
+### 2. DATABASE SCHEMA & DATA FLOW CHECK
+- Verify all tables have proper foreign key relationships
+- Test data consistency across related tables
+- Check if database changes reflect immediately in frontend
+- Verify all joins and queries return correct data
+- Test database constraints and validation rules
+
+### 3. MODULE INTERCONNECTION TESTING
+**Test these critical data flows:**
+
+**INVENTORY → DASHBOARD:**
+- Add/remove inventory → Check dashboard low stock alerts update
+- Change expiry dates → Verify dashboard expiring products update
+- Stock level changes → Dashboard metrics reflect changes
+
+**EXPENSES → ACCOUNTING:**
+- Create expense → Verify appears in accounting P&L report
+- Expense categories → Check sync with chart of accounts
+- Expense totals → Verify accounting calculations update
+
+**INVOICES → ACCOUNTING:**
+- Create invoice → Check journal entries auto-created
+- Invoice payments → Verify A/R balances update
+- Invoice totals → Check revenue appears in P&L
+
+**ORDERS → INVENTORY:**
+- Process order → Verify inventory stock levels update
+- Order completion → Check product quantities decrease
+- Order status changes → Verify inventory movements tracked
+
+**CUSTOMERS → INVOICING:**
+- Customer data → Verify appears in invoice dropdowns
+- Customer details → Check auto-populate in forms
+- Customer balance → Verify payment history tracking
+
+### 4. REAL-TIME DATA SYNC TEST
+- Create new product → Check appears immediately in all relevant modules
+- Record payment → Verify customer balance updates instantly
+- Change user permissions → Check access restrictions apply immediately
+- Update system preferences → Verify settings apply across modules
+
+### 5. USER PERMISSIONS & MODULE ACCESS
+- Test each user role (admin, manager, accountant, inventory_manager)
+- Verify users can only access permitted modules
+- Check data filtering based on user permissions
+- Test user activity logging and audit trails
+
+### 6. WAREHOUSE FUNCTIONALITY DEEP TEST
+- Switch between warehouses → Verify different product lists
+- Filter by warehouse → Check only relevant products show
+- Stock movements → Verify tracked per warehouse correctly
+- Reports by warehouse → Test data segregation
+
+### 7. SEARCH & FILTER INTEGRATION
+- Search products → Verify searches database correctly
+- Apply filters → Check API calls return filtered data
+- Sort by columns → Verify database sorting works
+- Pagination → Test API pagination functionality
+
+### 8. EXPORT & REPORTING SYNC
+- Generate PDF reports → Verify pulls latest database data
+- Export CSV → Check includes all current records
+- Financial reports → Verify calculations match database
+- Dashboard charts → Check data visualization accuracy
+
+### 9. FORM VALIDATION & ERROR HANDLING
+- Submit invalid data → Check frontend validation works
+- Test required fields → Verify backend validation
+- Database constraint violations → Check error handling
+- Network failures → Test offline behavior
+
+### 10. PERFORMANCE & OPTIMIZATION TEST
+- Load large datasets → Check frontend handles efficiently
+- Multiple simultaneous users → Test database performance
+- Complex queries → Verify response times acceptable
+- Memory usage → Check for leaks or excessive consumption
+
+## 🎯 SPECIFIC INTEGRATION POINTS TO VERIFY
+
+**Dashboard Integration:**
+- Metrics cards pull real data from database
+- Low stock alerts query inventory table correctly
+- Charts display accurate financial data
+- Quick actions navigate to correct modules
+
+**Accounting Integration:**
+- Trial balance calculations are accurate
+- Journal entries auto-create from transactions
+- Financial reports show real-time data
+- Account balances update with every transaction
+
+**Inventory Integration:**
+- Stock levels sync across all modules
+- Expiry tracking works with alerts
+- Warehouse filtering functions properly
+- Product data consistent everywhere
+
+**User Management Integration:**
+- Role assignments work across modules
+- Permission changes apply immediately
+- Activity logging captures all actions
+- Session management secure and functional
+
+## 📊 SUCCESS CRITERIA
+
+The system passes if:
+- ✅ All API endpoints return correct data
+- ✅ Database changes reflect in frontend immediately
+- ✅ Module interconnections work seamlessly
+- ✅ User permissions enforce properly
+- ✅ Data consistency maintained across modules
+- ✅ Search, filters, and exports work correctly
+- ✅ No broken links or non-functional buttons
+- ✅ Performance acceptable under normal load
+- ✅ Error handling graceful and informative
+
+## 🚨 REPORT FINDINGS
+
+Provide detailed report of:
+1. **Working Integrations** - What's functioning correctly
+2. **Broken Connections** - Any API/database sync issues
+3. **Data Inconsistencies** - Any mismatched information
+4. **Performance Issues** - Slow queries or responses
+5. **Missing Features** - Incomplete integrations
+6. **Security Concerns** - Permission or validation gaps
+
+**DELIVER COMPREHENSIVE INTEGRATION ASSESSMENT WITH SPECIFIC FIXES FOR ANY ISSUES FOUND.**

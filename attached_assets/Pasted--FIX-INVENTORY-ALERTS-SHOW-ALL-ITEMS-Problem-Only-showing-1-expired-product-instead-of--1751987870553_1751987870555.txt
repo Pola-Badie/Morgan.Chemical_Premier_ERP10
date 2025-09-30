@@ -1,0 +1,331 @@
+# 🔧 FIX INVENTORY ALERTS - SHOW ALL ITEMS
+
+## Problem:
+- Only showing 1 expired product instead of all expired products
+- Only showing 1 low stock item instead of all low stock and out of stock items
+- Missing proper categorization (out of stock vs low stock)
+
+## Solution - Fix Backend APIs:
+
+### 1. REPLACE Low Stock API in server/index.ts
+
+```typescript
+// REPLACE your existing /api/inventory/low-stock endpoint with this:
+app.get('/api/inventory/low-stock', requireAuth, async (req, res) => {
+  try {
+    const lowStockProducts = await db.select({
+      id: products.id,
+      name: products.name,
+      currentStock: products.currentStock,
+      reorderPoint: products.reorderPoint,
+      safetyStock: products.safetyStock,
+      unitOfMeasure: products.unitOfMeasure,
+      categoryName: categories.name,
+      batchNumber: products.batchNumber,
+      supplierCode: products.supplierCode
+    })
+    .from(products)
+    .leftJoin(categories, eq(products.categoryId, categories.id))
+    .where(
+      and(
+        eq(products.isActive, true),
+        or(
+          eq(products.currentStock, 0), // Out of stock
+          lte(products.currentStock, products.reorderPoint) // Low stock
+        )
+      )
+    )
+    .orderBy(products.currentStock); // Show lowest stock first
+
+    // Add stock status to each product
+    const productsWithStatus = lowStockProducts.map(product => ({
+      ...product,
+      stockStatus: product.currentStock === 0 ? 'out_of_stock' :
+                   product.currentStock <= product.safetyStock ? 'critical' :
+                   product.currentStock <= product.reorderPoint ? 'low' : 'normal'
+    }));
+
+    console.log(`Found ${productsWithStatus.length} low stock products`);
+    res.json(productsWithStatus);
+  } catch (error) {
+    console.error('Low stock fetch error:', error);
+    res.status(500).json({ error: 'Failed to fetch low stock products' });
+  }
+});
+```
+
+### 2. REPLACE Expiring Products API in server/index.ts
+
+```typescript
+// REPLACE your existing /api/inventory/expiring endpoint with this:
+app.get('/api/inventory/expiring', requireAuth, async (req, res) => {
+  try {
+    const today = new Date();
+    const thirtyDaysFromNow = new Date();
+    thirtyDaysFromNow.setDate(today.getDate() + 30);
+    
+    // Get all products with expiry dates
+    const allProducts = await db.select({
+      id: products.id,
+      name: products.name,
+      batchNumber: products.batchNumber,
+      expiryDate: products.expiryDate,
+      currentStock: products.currentStock,
+      unitOfMeasure: products.unitOfMeasure,
+      categoryName: categories.name,
+      manufacturingDate: products.manufacturingDate
+    })
+    .from(products)
+    .leftJoin(categories, eq(products.categoryId, categories.id))
+    .where(
+      and(
+        eq(products.isActive, true),
+        sql`${products.expiryDate} IS NOT NULL`
+      )
+    )
+    .orderBy(products.expiryDate);
+
+    // Calculate expiry status for each product
+    const expiringProducts = allProducts
+      .map(product => {
+        if (!product.expiryDate) return null;
+        
+        const expiryDate = new Date(product.expiryDate);
+        const daysDiff = Math.ceil((expiryDate - today) / (1000 * 60 * 60 * 24));
+        
+        let expiryStatus = 'normal';
+        if (daysDiff < 0) expiryStatus = 'expired';
+        else if (daysDiff <= 7) expiryStatus = 'critical';
+        else if (daysDiff <= 30) expiryStatus = 'warning';
+
+        return {
+          ...product,
+          daysUntilExpiry: daysDiff,
+          expiryStatus
+        };
+      })
+      .filter(product => product && product.daysUntilExpiry <= 30) // Only show products expiring within 30 days or expired
+      .sort((a, b) => a.daysUntilExpiry - b.daysUntilExpiry); // Sort by most urgent first
+
+    console.log(`Found ${expiringProducts.length} expiring products`);
+    res.json(expiringProducts);
+  } catch (error) {
+    console.error('Expiring products fetch error:', error);
+    res.status(500).json({ error: 'Failed to fetch expiring products' });
+  }
+});
+```
+
+### 3. UPDATE Inventory Summary API in server/index.ts
+
+```typescript
+// REPLACE your existing /api/inventory/summary endpoint with this:
+app.get('/api/inventory/summary', requireAuth, async (req, res) => {
+  try {
+    const today = new Date();
+    
+    // Get all active products
+    const allProducts = await db.select({
+      id: products.id,
+      currentStock: products.currentStock,
+      reorderPoint: products.reorderPoint,
+      safetyStock: products.safetyStock,
+      expiryDate: products.expiryDate
+    })
+    .from(products)
+    .where(eq(products.isActive, true));
+
+    // Calculate counts
+    let totalProducts = 0;
+    let lowStockCount = 0;
+    let outOfStockCount = 0;
+    let expiringCount = 0;
+    let expiredCount = 0;
+
+    allProducts.forEach(product => {
+      totalProducts++;
+      
+      // Stock status
+      if (product.currentStock === 0) {
+        outOfStockCount++;
+      } else if (product.currentStock <= product.reorderPoint) {
+        lowStockCount++;
+      }
+      
+      // Expiry status
+      if (product.expiryDate) {
+        const expiryDate = new Date(product.expiryDate);
+        const daysDiff = Math.ceil((expiryDate - today) / (1000 * 60 * 60 * 24));
+        
+        if (daysDiff < 0) {
+          expiredCount++;
+        } else if (daysDiff <= 30) {
+          expiringCount++;
+        }
+      }
+    });
+
+    const summary = {
+      totalProducts,
+      lowStockCount,
+      outOfStockCount,
+      expiringCount,
+      expiredCount
+    };
+
+    console.log('Inventory Summary:', summary);
+    res.json(summary);
+  } catch (error) {
+    console.error('Inventory summary error:', error);
+    res.status(500).json({ error: 'Failed to fetch inventory summary' });
+  }
+});
+```
+
+### 4. ADD MORE SAMPLE DATA with varying stock levels and expiry dates
+
+```typescript
+// Add this to your database initialization function in server/index.ts:
+// REPLACE your existing sample products with these:
+
+const sampleProducts = [
+  // Low Stock / Out of Stock Products
+  {
+    name: 'Daflon 500',
+    description: 'Diosmin/Hesperidin for cardiovascular',
+    categoryId: categoriesData[2].id, // Pharmaceuticals
+    unitOfMeasure: 'pcs',
+    unitPrice: '25.50',
+    currentStock: 0, // OUT OF STOCK
+    reorderPoint: 50,
+    safetyStock: 20,
+    supplierCode: 'DAF-001',
+    batchNumber: 'BA-2024-001',
+    expiryDate: '2023-06-19', // EXPIRED
+    manufacturingDate: '2022-06-19'
+  },
+  {
+    name: 'Aspirin 500mg',
+    description: 'Pain relief medication',
+    categoryId: categoriesData[2].id,
+    unitOfMeasure: 'pack',
+    unitPrice: '8.99',
+    currentStock: 10, // LOW STOCK (below reorder point of 50)
+    reorderPoint: 50,
+    safetyStock: 25,
+    supplierCode: 'ASP-003',
+    batchNumber: 'BA-2024-003',
+    expiryDate: '2025-08-15',
+    manufacturingDate: '2024-03-20'
+  },
+  {
+    name: 'Paracetamol 500mg',
+    description: 'Fever and pain reliever',
+    categoryId: categoriesData[2].id,
+    unitOfMeasure: 'bottle',
+    unitPrice: '12.50',
+    currentStock: 5, // CRITICAL LOW STOCK
+    reorderPoint: 30,
+    safetyStock: 15,
+    supplierCode: 'PAR-004',
+    batchNumber: 'BA-2024-004',
+    expiryDate: '2025-12-31',
+    manufacturingDate: '2024-01-15'
+  },
+  {
+    name: 'Vitamin C Tablets',
+    description: 'Immune system support',
+    categoryId: categoriesData[2].id,
+    unitOfMeasure: 'bottle',
+    unitPrice: '15.99',
+    currentStock: 0, // OUT OF STOCK
+    reorderPoint: 40,
+    safetyStock: 20,
+    supplierCode: 'VIT-005',
+    batchNumber: 'BA-2024-005',
+    expiryDate: '2025-10-30',
+    manufacturingDate: '2024-02-10'
+  },
+  // Expiring Products
+  {
+    name: 'Antibiotic Syrup',
+    description: 'Bacterial infection treatment',
+    categoryId: categoriesData[2].id,
+    unitOfMeasure: 'bottle',
+    unitPrice: '35.00',
+    currentStock: 25,
+    reorderPoint: 20,
+    safetyStock: 10,
+    supplierCode: 'ANT-006',
+    batchNumber: 'BA-2024-006',
+    expiryDate: '2025-07-15', // EXPIRING SOON
+    manufacturingDate: '2024-01-15'
+  },
+  {
+    name: 'Cough Syrup',
+    description: 'Cough suppressant',
+    categoryId: categoriesData[2].id,
+    unitOfMeasure: 'bottle',
+    unitPrice: '18.75',
+    currentStock: 30,
+    reorderPoint: 25,
+    safetyStock: 12,
+    supplierCode: 'COU-007',
+    batchNumber: 'BA-2024-007',
+    expiryDate: '2025-07-20', // EXPIRING SOON
+    manufacturingDate: '2024-02-20'
+  },
+  // Chemical Products
+  {
+    name: 'Sulfuric Acid 98%',
+    description: 'High purity sulfuric acid for industrial use',
+    categoryId: categoriesData[0].id, // Chemicals
+    unitOfMeasure: 'ltr',
+    unitPrice: '25.50',
+    currentStock: 150,
+    reorderPoint: 20,
+    safetyStock: 10,
+    supplierCode: 'SA-001',
+    batchNumber: 'BA-2024-001',
+    expiryDate: '2025-12-31',
+    manufacturingDate: '2024-01-15'
+  },
+  {
+    name: 'Sodium Hydroxide',
+    description: 'Caustic soda for chemical processes',
+    categoryId: categoriesData[0].id,
+    unitOfMeasure: 'kg',
+    unitPrice: '15.75',
+    currentStock: 200,
+    reorderPoint: 30,
+    safetyStock: 15,
+    supplierCode: 'NaOH-002',
+    batchNumber: 'BA-2024-002',
+    expiryDate: '2026-06-30',
+    manufacturingDate: '2024-02-10'
+  }
+];
+```
+
+## 🎯 COPY THIS PROMPT TO REPLIT:
+
+```
+Fix Inventory Alerts - Show All Low Stock and Expired Items
+
+My dashboard is only showing 1 expired product and 1 low stock item, but there should be multiple items in each category.
+
+Problems:
+1. Only showing 1 expired product instead of all expired products
+2. Only showing 1 low stock item instead of showing both low stock AND out of stock items
+3. Need to see proper counts (0 Out, 1 Low, 1 Expired, 1 Expiring)
+
+Please:
+1. Fix the backend APIs to return ALL products that meet the criteria
+2. Add more sample products with different stock levels and expiry dates
+3. Show proper categorization (out of stock vs low stock, expired vs expiring)
+4. Make sure the dashboard cards show accurate counts
+
+Use the updated APIs and sample data provided to fix this completely.
+```
+
+This will fix your inventory alerts to show ALL relevant products, not just one of each type! 🎯

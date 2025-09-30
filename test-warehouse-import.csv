@@ -1,0 +1,3 @@
+name,drugName,sku,costPrice,sellingPrice,quantity,unitOfMeasure
+CSV Test Packaging Product,Test Chemical,PKG-CSV-001,10,25,300,KG
+CSV Test Raw Material,Test Raw,PKG-CSV-002,5,15,500,L

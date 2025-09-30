@@ -1,0 +1,61 @@
+🔹 Tab 1: New Product
+Title: New Product Order
+Add a searchable dropdown labeled “Choose Customer” that pulls data from the Customers Tab.
+On selection, display:
+Customer Name
+Company
+Sector
+Add an auto-generated Batch Number (format: BATCH-0001, editable).
+The field should increment from the last batch used and be editable in case of manual continuation.
+Add a multi-select field to choose raw materials from the Products tab (items marked as raw).
+For each item, allow:
+Quantity input
+Editable unit price
+Auto-calculated subtotal (qty × price)
+Add a Final Product Description (rich text input)
+Add editable total pricing field or auto-sum all subtotals.
+Add a Save Order button that stores the order in a Production Orders History section/table below.
+Below the form, display a Production Orders History Table:
+Batch No.
+Customer
+Final Product
+Total Cost
+Timestamp
+Buttons for: Create Invoice, Edit, View
+🔸 Tab 2: Refining Process
+Title: Refining Order
+Add a searchable dropdown labeled “Choose Customer” (same as above).
+Add an editable, auto-generated Batch Number (same format).
+Add a source selector with two options:
+From existing Production Orders History
+From Products/Stock Tab
+Let the user choose the material to be refined.
+Allow entering refining process steps as a list (e.g., Filtration, Distillation).
+Add a field for Expected Output Description
+Add optional pricing or cost adjustments
+Add a Save Refining Order button.
+Below, display a Refining Orders History Table:
+Batch No.
+Customer
+Source Material
+Expected Output
+Timestamp
+Buttons for: Create Invoice, Edit, View
+🔧 Shared Functionalities:
+Both tabs must:
+Allow batch number editing with auto-continuation.
+Pull customer data dynamically.
+Link selected products/inventory to the orders.
+Allow invoice generation from saved orders.
+All forms should be:
+Scrollable
+Cleanly separated by section
+Responsive
+Easy to extend for future order types
+All orders must be saved with:
+Order Type (New Product / Refining)
+Linked customer ID
+Linked product/material IDs
+Batch number
+Timestamps and creator info
+Status (Pending, Completed, Invoiced)"**

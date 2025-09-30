@@ -1,0 +1,109 @@
+Goal: make the ERP run on Railway without refactoring business logic.
+Fix the ESM import/export mismatch, ensure a single PORT-binding listen, and compile TS → JS before start.
+
+===============================================================================
+1) FIX: routes-accounting default export (root cause of crash)
+===============================================================================
+Locate the file (whichever exists):
+- server/routes-accounting.ts  OR
+- server/routes-accounting.js
+
+Open it and ensure it exposes BOTH a named router and a default export.
+
+CASE A: ESM / TypeScript style (has "import" and "export"):
+  - Identify the router variable name: it's usually `accountingRoutes` or `router`.
+  - KEEP all existing code/exports. Then append EXACTLY ONE of these lines at the END:
+
+    If the variable is `accountingRoutes`:
+      export default accountingRoutes;
+
+    If the variable is `router`:
+      export default router;
+
+CASE B: CommonJS style (has require/module.exports):
+  - Ensure the file ends with:
+      module.exports = accountingRoutes;
+    or
+      module.exports = router;
+
+Do NOT remove existing named exports (e.g., `export { accountingRoutes }` or `export const accountingRoutes = ...`).
+We’re only adding a default export so the default import works.
+
+===============================================================================
+2) KEEP the importer as-is (matches your current code)
+===============================================================================
+File: server/index.production.ts
+Make sure the import line remains:
+  import accountingRoutes from './routes-accounting.js';
+
+(Do not rewrite it to a named import.)
+
+===============================================================================
+3) Ensure exactly ONE app.listen using Railway’s PORT
+===============================================================================
+Find the file that calls listen (server/index.production.ts or the main server file).
+Normalize to:
+
+  const port = Number(process.env.PORT) || 3000;
+  app.listen(port, () => console.log(`ERP running on ${port}`));
+
+If multiple listen calls exist anywhere, keep only ONE.
+
+===============================================================================
+4) Compile TS and run built JS in production (avoid running .ts directly)
+===============================================================================
+Edit ROOT package.json (create if missing). Ensure Node 20 and scripts like this:
+
+  {
+    "engines": { "node": "20.x" },
+    "scripts": {
+      "build": "tsc",
+      "start": "node build/index.production.js"
+    }
+  }
+
+- If your compiled entry isn’t build/index.production.js, point "start" to the correct built file
+  (e.g., build/server.js or build/server/index.js).
+- Do NOT change business code.
+
+Open tsconfig.json and ensure:
+  {
+    "compilerOptions": {
+      "outDir": "build"
+    }
+  }
+(If your project already uses a different outDir, keep it and adjust the start path accordingly.)
+
+===============================================================================
+5) Lockfile + deps sanity
+===============================================================================
+- Keep exactly ONE lockfile at repo root: package-lock.json OR yarn.lock OR pnpm-lock.yaml.
+- Any runtime packages (express, pg, drizzle-orm, etc.) must be in "dependencies", not "devDependencies".
+
+===============================================================================
+6) Railway settings (UI or railway.json)
+===============================================================================
+In Railway → Settings → Deploy:
+  Build Command: npm ci && npm run build
+  Start Command: npm run start
+
+(Optional file to codify this; create at repo root):
+  railway.json
+  {
+    "build": {
+      "builder": "NIXPACKS",
+      "buildCommand": "npm ci && npm run build",
+      "startCommand": "npm run start"
+    }
+  }
+
+===============================================================================
+7) Deploy steps
+===============================================================================
+- Commit the changes.
+- Push to GitHub.
+- Redeploy on Railway (or enable Auto-Deploy).
+- Logs should no longer show "does not provide an export named 'default'".
+- You should see: "ERP running on <port>".
+
+END.

@@ -1,0 +1,65 @@
+Build a Product Management Module for a Chemicals Factory ERP using:
+🛠 Tech Stack:
+Frontend: React.js
+Backend: FastAPI (Python)
+Database: PostgreSQL
+🧩 Functional Features:
+Product Creation Form (React Frontend)
+Form fields:
+Product Name (text input)
+Drug Name (text input)
+Category (text input)
+SKU (text input)
+Description (textarea input)
+Quantity (number input, must be positive)
+Cost Price (float input, must be positive)
+Selling Price (float input, must be positive)
+Unit of Measure (Dropdown select with options, ordered logically):
+Liters (L)
+Pieces (PCS)
+Tons (T)
+Kilograms (KG)
+Grams (g)
+Milligrams (mg)
+Expiry Date (Simple Date Picker input, must be future date)
+Status (Dropdown: In Stock / Out of Stock)
+Backend API (FastAPI Backend)
+POST /products/ endpoint:
+Accepts new product submissions
+Validates:
+Positive quantity, cost price, selling price
+Expiry date must be after today
+Unit of measure must be one of (L, PCS, T, KG, g, mg)
+Stores data cleanly in database (PostgreSQL ready)
+Use modular structure:
+schemas/product_schema.py
+routes/products.py
+models/product_model.py
+services/product_service.py (optional later)
+Validation and Error Handling
+Frontend:
+Prevent invalid submissions (like empty fields or wrong unit)
+Format expiry date correctly (YYYY-MM-DD)
+Convert quantity, costPrice, sellingPrice to float before sending
+Backend:
+Validate everything again with Pydantic
+Raise proper HTTP errors if invalid data received
+Code Organization and Modularity
+React frontend:
+components/AddProductForm.jsx
+services/productService.js (Axios API calls)
+FastAPI backend:
+Separate folders: schemas/, routes/, models/
+Modular and clean design following industrial standards
+Optional Future Enhancements:
+Add ability to Edit Products
+Add List/Search Products
+Add Category Management (manage allowed categories)
+Add Alerts for products nearing expiry
+📦 Deliverables:
+
+React working Add Product Form with all validations and UoM dropdown
+FastAPI backend with complete field validations
+PostgreSQL-ready models for products
+Fully modular clean code
+Ready for production extension and scalability

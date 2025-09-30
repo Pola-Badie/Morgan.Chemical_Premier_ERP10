@@ -1,0 +1,88 @@
+You are building a full accounting and financial reporting module inside an ERP system. Use the following specifications:
+🔷 1. Expenses Module (مصاريف)
+Create a model and UI to record and track all company expenses.
+Fields:
+
+Expense Date (date)
+Description (text)
+Amount (decimal)
+Account Type (dropdown: e.g., Marketing, Operations, Fixed Assets, Projects Under Execution)
+Payment Method (dropdown: Cash, Bank Transfer, Current Account)
+Cost Center (dropdown: Marketing, Projects, Admin, etc.)
+Company (dropdown from company list)
+Reference or Voucher No (optional)
+Currency (dropdown)
+Include filters for date range, account type, and cost center, and a summary view by month and category.
+
+🔷 2. Purchases Module (مشتريات)
+Create a model to manage purchase records, suppliers, and inventory-related accounting.
+Fields:
+
+Purchase Invoice No
+Purchase Date
+Supplier Name (dropdown)
+Product/Item Name
+Quantity
+Unit of Measure
+Unit Price
+Total Amount
+VAT %
+VAT Amount
+Grand Total
+Payment Method (Cash, Credit, Bank Transfer)
+Paid Status (Paid / Partially Paid / Unpaid)
+Linked Warehouse or Stock Entry (optional)
+Enable filters for supplier, payment method, and date range. Show a table of total purchases by supplier and month.
+
+🔷 3. Invoices Due Module (فواتير مطلوبة)
+This is your Accounts Payable or Receivable tracker.
+Fields:
+
+Invoice ID
+Supplier/Customer Name
+Invoice Date
+Due Date
+Subtotal
+VAT
+Total Amount
+Amount Paid
+Remaining Balance
+Status (Paid, Unpaid, Overdue)
+Payment Method
+Reminder Notes (optional)
+Add sorting by due date and color-code overdue invoices. Add alert toggles for overdue items.
+
+🔷 4. Chart of Accounts (000000, 100000)
+Build a master ledger where every financial transaction is linked.
+Fields:
+
+Account Code (e.g., 100000, 500000)
+Account Name (Arabic)
+Account Name (English)
+Account Type (Asset, Liability, Revenue, Expense, Equity)
+Parent Account (optional for grouping)
+Active Status (Yes/No)
+Enable tree-structure viewing of account categories and subcategories.
+
+🔷 5. Financial Reports Generator
+Add a dynamic reporting tab that supports:
+
+Trial Balance
+General Ledger Report
+Expense Summary by Category
+Purchase Summary by Supplier
+Cash Flow Report
+Aging Report for Payables
+Use filters by:
+
+Date range
+Account Type
+Cost Center
+Company
+Display charts and export options (CSV, PDF).
+
+Additional Options:
+Multi-currency support
+Auto journal entry posting for each purchase or expense
+Arabic-English toggle for labels
+Admin setting to customize account names

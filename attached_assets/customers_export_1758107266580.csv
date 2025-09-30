@@ -1,0 +1,15 @@
+id,name,position,company,sector,phone,email,address,taxNumber
+1,Cairo Medical Center,Procurement Manager,Cairo Medical Center,Healthcare,+20 2 2222 3333,contact@cairomedical.com,"null, null, null null",ETA-442942100
+2,Alexandria Pharmacy,Supply Chain Director,Alexandria Pharmacy,Retail,+20 3 4444 5555,info@alexpharmacy.com,"null, null, null null",ETA-569083102
+3,Giza Hospital,Chief Medical Officer,Giza Hospital,Healthcare,+20 2 3333 4444,admin@gizahospital.com,"null, null, null null",ETA-865814473
+4,Dr. Ahmed Hassan,Inventory Manager,Ahmed Medical Center,Biotechnology,+20 2 5555 6666,ahmed.hassan@biotech-innovations.com,"45 Technology Street, New Cairo, Cairo 11835",ETA-147065614
+5,Sara Mohamed,Hospital Administrator,Mohamed Hospital,Clinical Research,+20 3 7777 8888,sara.mohamed@pharma-excellence.com,"123 Industrial Zone, Alexandria, Alexandria 21500",ETA-632542543
+6,Dr. Mahmoud Ali,Pharmacy Manager,Mahmoud Pharmacy,Laboratory Services,+20 2 9999 1111,mahmoud.ali@clinical-research.org,"78 Research Park, 6th October City, Giza 12566",ETA-582642706
+7,Fatma Khalil,Logistics Coordinator,Khalil Clinic,Hospital Networks,+20 2 3333 2222,fatma.khalil@med-devices.com,"56 Innovation Hub, Smart Village, Giza 12577",ETA-595588602
+8,Hassan Abdel Rahman,Operations Director,Abdel Medical Center,Pharmacy Chains,+20 2 4444 5555,hassan.rahman@lab-services.net,"12 Laboratory Complex, Maadi, Cairo 11431",ETA-401327762
+9,Dr. Nadia Farouk,Clinical Manager,Nadia Hospital,Healthcare,+20 2 6666 7777,nadia.farouk@pharma-solutions.eg,"34 Science Park, New Administrative Capital, Cairo 12345",ETA-978701342
+10,Dr. Omar Mansour,Research Director,BioTech Research Institute,Biotechnology,+20 2 8888 9999,omar.mansour@biotech-research.com,"67 Innovation District, New Administrative Capital, Cairo 12589",ETA-111222333
+11,Dr. Layla Ibrahim,Clinical Engineering Manager,Advanced Medical Devices Co.,Medical Devices,+20 3 5555 6666,layla.ibrahim@medical-devices.co,"89 Technology Hub, Alexandria, Alexandria 21600",ETA-444555666
+12,Ahmed Khairy,Laboratory Operations Director,Laboratory Excellence Network,Laboratory Services,+20 2 7777 8888,ahmed.khairy@lab-excellence.net,"23 Research Complex, Heliopolis, Cairo 11757",ETA-777888999
+13,Dr. Mariam Saeed,Principal Investigator,Clinical Trials Organization,Clinical Research,+20 2 3333 4444,mariam.saeed@clinical-trials.org,"45 Clinical Research Center, Nasr City, Cairo 11371",ETA-999000111
+14,Youssef Abdel Aziz,Network Administrator,National Hospital Networks,Hospital Networks,+20 2 1111 2222,youssef.aziz@hospital-networks.com,"12 Healthcare District, New Cairo, Cairo 11835",ETA-222333444

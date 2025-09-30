@@ -1,0 +1,99 @@
+version: '3.8'
+
+services:
+  # Traefik Reverse Proxy with SSL
+  traefik:
+    image: traefik:v3.0
+    container_name: premier-erp-traefik
+    restart: unless-stopped
+    command:
+      - --api.dashboard=true
+      - --api.insecure=true
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+      - --certificatesresolvers.letsencrypt.acme.tlschallenge=true
+      - --certificatesresolvers.letsencrypt.acme.email=support@premiererp.io
+      - --certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json
+      - --certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"  # Traefik dashboard
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - letsencrypt_data:/letsencrypt
+    networks:
+      - erp-network
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: premier-erp-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: premier_erp
+      POSTGRES_USER: erp_user
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-erp_secure_password_2024}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - erp-network
+
+  # Premier ERP Backend
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: premier-erp-app
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    environment:
+      NODE_ENV: production
+      DATABASE_URL= 'postgresql://neondb_owner:npg_RgYqcf8Q4vVo@ep-solitary-bar-adggyh8w-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require'
+: postgresql://erp_user:${POSTGRES_PASSWORD:-erp_secure_password_2024}@postgres:5432/premier_erp
+      PORT: 5000
+      DOMAIN: demo.premiererp.io
+    networks:
+      - erp-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.premier-api.rule=Host(`demo.premiererp.io`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.premier-api.entrypoints=websecure"
+      - "traefik.http.routers.premier-api.tls.certresolver=letsencrypt"
+      - "traefik.http.services.premier-api.loadbalancer.server.port=5000"
+
+  # Premier ERP Frontend
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: premier-erp-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    networks:
+      - erp-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.premier-web.rule=Host(`demo.premiererp.io`)"
+      - "traefik.http.routers.premier-web.entrypoints=websecure"
+      - "traefik.http.routers.premier-web.tls.certresolver=letsencrypt"
+      - "traefik.http.services.premier-web.loadbalancer.server.port=80"
+      # HTTP to HTTPS redirect
+      - "traefik.http.routers.premier-web-http.rule=Host(`demo.premiererp.io`)"
+      - "traefik.http.routers.premier-web-http.entrypoints=web"
+      - "traefik.http.routers.premier-web-http.middlewares=redirect-to-https"
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+
+volumes:
+  postgres_data:
+    driver: local
+  letsencrypt_data:
+    driver: local
+
+networks:
+  erp-network:
+    driver: bridge

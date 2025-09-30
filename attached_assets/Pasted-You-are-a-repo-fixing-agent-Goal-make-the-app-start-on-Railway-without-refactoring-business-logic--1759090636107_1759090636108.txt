@@ -1,0 +1,80 @@
+You are a repo-fixing agent. Goal: make the app start on Railway without refactoring business logic.
+Fix only build/start wiring and leave all feature code intact.
+
+===============================================================================
+1) PACKAGE.JSON — standardize build/start (root package.json)
+===============================================================================
+Open the ROOT package.json and set:
+
+- Ensure Node 20 (prevents runtime mismatch):
+  "engines": { "node": "20.x" }
+
+- Replace the scripts block with this EXACT block:
+  "scripts": {
+    "build": "tsc",
+    "start": "NODE_ENV=production node dist/server/index.js || NODE_ENV=production node dist/server/index.production.js"
+  }
+
+Explanation: we compile TS → JS, then try to start `dist/server/index.js`.
+If it doesn’t exist, we fall back to `dist/server/index.production.js`.
+Do NOT add other scripts. Keep dependencies as-is.
+
+===============================================================================
+2) TSCONFIG — make sure TS outputs to dist/ and picks up server files
+===============================================================================
+Open ROOT tsconfig.json and ensure these keys under "compilerOptions".
+Add them if missing; do not remove other existing options:
+
+{
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "."
+  },
+  "include": ["server/**/*.ts", "src/**/*.ts", "index.ts"]
+}
+
+Notes:
+- Keep whatever "module"/"target"/other options you already have.
+- The include list is broad on purpose so `server/index.ts` or `server/index.production.ts` get compiled.
+- If you already use another outDir, switch it to "dist" for consistency with the start script above.
+
+===============================================================================
+3) (If not already done) ENSURE routes-accounting has a default export
+===============================================================================
+Open server/routes-accounting.(ts|js).
+At the very end of the file, append ONE of these lines depending on your router variable:
+
+- If the router variable is named accountingRoutes:
+    export default accountingRoutes;
+
+- If the router variable is named router:
+    export default router;
+
+KEEP any existing named exports. We are only adding a default export.
+
+===============================================================================
+4) SINGLE app.listen USING RAILWAY PORT (only standardize; don’t refactor)
+===============================================================================
+In the file that calls app.listen (e.g., server/index.production.ts or server/index.ts),
+ensure there is exactly ONE listen and it uses process.env.PORT:
+
+const port = Number(process.env.PORT) || 3000;
+app.listen(port, () => console.log(`ERP running on ${port}`));
+
+===============================================================================
+5) LOCKFILE SANITY
+===============================================================================
+At repo root keep exactly ONE lockfile:
+- package-lock.json OR yarn.lock OR pnpm-lock.yaml (choose one). Remove the others.
+
+===============================================================================
+6) RAILWAY SETTINGS
+===============================================================================
+In Railway → Service → Settings → Deploy:
+- Build Command: npm ci && npm run build
+- Start Command: npm run start
+Add required variables (DATABASE_URL= 'postgresql://neondb_owner:npg_RgYqcf8Q4vVo@ep-solitary-bar-adggyh8w-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require'
+, JWT_SECRET, etc.).
+Redeploy and watch logs. It should no longer say "Cannot find module '/app/dist/server/index.js'".
+
+END.

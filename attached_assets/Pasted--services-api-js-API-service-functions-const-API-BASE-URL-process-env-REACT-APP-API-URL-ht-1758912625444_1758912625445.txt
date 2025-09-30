@@ -1,0 +1,603 @@
+// services/api.js - API service functions
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+
+export const reportService = {
+  // Get Trial Balance
+  getTrialBalance: async (startDate, endDate) => {
+    const params = new URLSearchParams();
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+    
+    const response = await fetch(`${API_BASE_URL}/reports/trial-balance?${params}`);
+    if (!response.ok) throw new Error('Failed to fetch trial balance');
+    return response.json();
+  },
+
+  // Get Profit & Loss
+  getProfitLoss: async (startDate, endDate) => {
+    const params = new URLSearchParams();
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+    
+    const response = await fetch(`${API_BASE_URL}/reports/profit-loss?${params}`);
+    if (!response.ok) throw new Error('Failed to fetch P&L');
+    return response.json();
+  },
+
+  // Get Balance Sheet
+  getBalanceSheet: async (asOfDate) => {
+    const params = new URLSearchParams();
+    if (asOfDate) params.append('asOfDate', asOfDate);
+    
+    const response = await fetch(`${API_BASE_URL}/reports/balance-sheet?${params}`);
+    if (!response.ok) throw new Error('Failed to fetch balance sheet');
+    return response.json();
+  },
+
+  // Get Cash Flow Statement
+  getCashFlow: async (startDate, endDate) => {
+    const params = new URLSearchParams();
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+    
+    const response = await fetch(`${API_BASE_URL}/reports/cash-flow?${params}`);
+    if (!response.ok) throw new Error('Failed to fetch cash flow');
+    return response.json();
+  },
+
+  // Get Chart of Accounts
+  getChartOfAccounts: async () => {
+    const response = await fetch(`${API_BASE_URL}/reports/chart-of-accounts`);
+    if (!response.ok) throw new Error('Failed to fetch chart of accounts');
+    return response.json();
+  },
+
+  // Get Journal Entries
+  getJournalEntries: async (startDate, endDate, status) => {
+    const params = new URLSearchParams();
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+    if (status) params.append('status', status);
+    
+    const response = await fetch(`${API_BASE_URL}/reports/journal-entries?${params}`);
+    if (!response.ok) throw new Error('Failed to fetch journal entries');
+    return response.json();
+  },
+
+  // Get General Ledger
+  getGeneralLedger: async (accountId, startDate, endDate) => {
+    const params = new URLSearchParams();
+    if (accountId) params.append('accountId', accountId);
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+    
+    const response = await fetch(`${API_BASE_URL}/reports/general-ledger?${params}`);
+    if (!response.ok) throw new Error('Failed to fetch general ledger');
+    return response.json();
+  },
+
+  // Get Account Summary
+  getAccountSummary: async () => {
+    const response = await fetch(`${API_BASE_URL}/reports/account-summary`);
+    if (!response.ok) throw new Error('Failed to fetch account summary');
+    return response.json();
+  },
+
+  // Get Aging Analysis
+  getAgingAnalysis: async (type = 'receivables') => {
+    const params = new URLSearchParams({ type });
+    const response = await fetch(`${API_BASE_URL}/reports/aging-analysis?${params}`);
+    if (!response.ok) throw new Error('Failed to fetch aging analysis');
+    return response.json();
+  },
+
+  // Export to PDF
+  exportToPDF: async (reportType, params = {}) => {
+    const queryString = new URLSearchParams(params).toString();
+    const response = await fetch(`${API_BASE_URL}/reports/${reportType}/pdf?${queryString}`);
+    if (!response.ok) throw new Error('Failed to export PDF');
+    
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${reportType}-${Date.now()}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  },
+
+  // Export to Excel
+  exportToExcel: async (reportType, params = {}) => {
+    const queryString = new URLSearchParams(params).toString();
+    const response = await fetch(`${API_BASE_URL}/reports/${reportType}/excel?${queryString}`);
+    if (!response.ok) throw new Error('Failed to export Excel');
+    
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${reportType}-${Date.now()}.xlsx`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  }
+};
+
+// ============================================================================
+// Updated Financial Reports Component
+// ============================================================================
+
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Loader2, Download, FileText, Calendar } from 'lucide-react';
+import { reportService } from '../services/api';
+
+// TypeScript interfaces
+interface ReportData {
+  reportType: string;
+  generatedAt: string;
+  period?: {
+    startDate: string;
+    endDate: string;
+  };
+  [key: string]: any;
+}
+
+export default function FinancialReports() {
+  const [selectedReport, setSelectedReport] = useState('trial-balance');
+  const [reportData, setReportData] = useState<ReportData | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Date filters
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [asOfDate, setAsOfDate] = useState('');
+
+  // Set default dates
+  useEffect(() => {
+    const today = new Date();
+    const firstDayOfYear = new Date(today.getFullYear(), 0, 1);
+    
+    setStartDate(firstDayOfYear.toISOString().split('T')[0]);
+    setEndDate(today.toISOString().split('T')[0]);
+    setAsOfDate(today.toISOString().split('T')[0]);
+  }, []);
+
+  const reportTypes = [
+    { value: 'trial-balance', label: 'Trial Balance' },
+    { value: 'profit-loss', label: 'Profit & Loss Statement' },
+    { value: 'balance-sheet', label: 'Balance Sheet' },
+    { value: 'cash-flow', label: 'Cash Flow Statement' },
+    { value: 'chart-of-accounts', label: 'Chart of Accounts' },
+    { value: 'journal-entries', label: 'Journal Entries' },
+    { value: 'general-ledger', label: 'General Ledger' },
+    { value: 'account-summary', label: 'Account Summary' },
+    { value: 'aging-analysis', label: 'Aging Analysis' }
+  ];
+
+  const fetchReport = async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      let data: ReportData;
+      
+      switch (selectedReport) {
+        case 'trial-balance':
+          data = await reportService.getTrialBalance(startDate, endDate);
+          break;
+        case 'profit-loss':
+          data = await reportService.getProfitLoss(startDate, endDate);
+          break;
+        case 'balance-sheet':
+          data = await reportService.getBalanceSheet(asOfDate);
+          break;
+        case 'cash-flow':
+          data = await reportService.getCashFlow(startDate, endDate);
+          break;
+        case 'chart-of-accounts':
+          data = await reportService.getChartOfAccounts();
+          break;
+        case 'journal-entries':
+          data = await reportService.getJournalEntries(startDate, endDate);
+          break;
+        case 'general-ledger':
+          data = await reportService.getGeneralLedger(null, startDate, endDate);
+          break;
+        case 'account-summary':
+          data = await reportService.getAccountSummary();
+          break;
+        case 'aging-analysis':
+          data = await reportService.getAgingAnalysis('receivables');
+          break;
+        default:
+          throw new Error('Unknown report type');
+      }
+      
+      setReportData(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch report');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (startDate && endDate) {
+      fetchReport();
+    }
+  }, [selectedReport, startDate, endDate, asOfDate]);
+
+  const handleExportPDF = async () => {
+    try {
+      const params = selectedReport === 'balance-sheet' 
+        ? { asOfDate } 
+        : { startDate, endDate };
+      await reportService.exportToPDF(selectedReport, params);
+    } catch (err) {
+      setError('Failed to export PDF');
+    }
+  };
+
+  const handleExportExcel = async () => {
+    try {
+      const params = selectedReport === 'balance-sheet' 
+        ? { asOfDate } 
+        : { startDate, endDate };
+      await reportService.exportToExcel(selectedReport, params);
+    } catch (err) {
+      setError('Failed to export Excel');
+    }
+  };
+
+  const renderTrialBalance = (data: any) => (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-semibold">Trial Balance</h3>
+        <div className="text-sm text-gray-600">
+          As of {new Date(data.generatedAt).toLocaleDateString()}
+        </div>
+      </div>
+      
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Account Number</TableHead>
+            <TableHead>Account Name</TableHead>
+            <TableHead>Account Type</TableHead>
+            <TableHead className="text-right">Debit</TableHead>
+            <TableHead className="text-right">Credit</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {data.accounts?.map((account: any, index: number) => (
+            <TableRow key={index}>
+              <TableCell>{account.accountNumber}</TableCell>
+              <TableCell>{account.accountName}</TableCell>
+              <TableCell>{account.accountType}</TableCell>
+              <TableCell className="text-right">
+                {account.debitBalance > 0 ? `$${account.debitBalance.toLocaleString()}` : '-'}
+              </TableCell>
+              <TableCell className="text-right">
+                {account.creditBalance > 0 ? `$${account.creditBalance.toLocaleString()}` : '-'}
+              </TableCell>
+            </TableRow>
+          ))}
+          <TableRow className="font-bold border-t-2">
+            <TableCell colSpan={3}>TOTALS</TableCell>
+            <TableCell className="text-right">${data.totals?.totalDebits.toLocaleString()}</TableCell>
+            <TableCell className="text-right">${data.totals?.totalCredits.toLocaleString()}</TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>
+      
+      {data.totals?.isBalanced ? (
+        <div className="text-green-600 font-medium">✓ Trial Balance is balanced</div>
+      ) : (
+        <div className="text-red-600 font-medium">⚠ Trial Balance is NOT balanced</div>
+      )}
+    </div>
+  );
+
+  const renderProfitLoss = (data: any) => (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-semibold">Profit & Loss Statement</h3>
+        <div className="text-sm text-gray-600">
+          {data.period?.startDate} to {data.period?.endDate}
+        </div>
+      </div>
+      
+      {/* Revenue Section */}
+      <div>
+        <h4 className="font-semibold text-green-600 mb-2">REVENUE</h4>
+        <Table>
+          <TableBody>
+            {data.revenue?.accounts?.map((account: any, index: number) => (
+              <TableRow key={index}>
+                <TableCell>{account.accountName}</TableCell>
+                <TableCell className="text-right">${account.amount.toLocaleString()}</TableCell>
+              </TableRow>
+            ))}
+            <TableRow className="font-bold border-t">
+              <TableCell>Total Revenue</TableCell>
+              <TableCell className="text-right">${data.revenue?.total.toLocaleString()}</TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      </div>
+      
+      {/* Expenses Section */}
+      <div>
+        <h4 className="font-semibold text-red-600 mb-2">EXPENSES</h4>
+        <Table>
+          <TableBody>
+            {data.expenses?.accounts?.map((account: any, index: number) => (
+              <TableRow key={index}>
+                <TableCell>{account.accountName}</TableCell>
+                <TableCell className="text-right">${account.amount.toLocaleString()}</TableCell>
+              </TableRow>
+            ))}
+            <TableRow className="font-bold border-t">
+              <TableCell>Total Expenses</TableCell>
+              <TableCell className="text-right">${data.expenses?.total.toLocaleString()}</TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      </div>
+      
+      {/* Net Income */}
+      <div className="bg-gray-50 p-4 rounded-lg">
+        <div className="flex justify-between items-center text-lg font-bold">
+          <span>NET INCOME</span>
+          <span className={data.netIncome >= 0 ? 'text-green-600' : 'text-red-600'}>
+            ${data.netIncome.toLocaleString()}
+          </span>
+        </div>
+        <div className="text-sm text-gray-600 mt-1">
+          Gross Margin: {data.grossMarginPercent}%
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderBalanceSheet = (data: any) => (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-semibold">Balance Sheet</h3>
+        <div className="text-sm text-gray-600">
+          As of {new Date(data.asOfDate).toLocaleDateString()}
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Assets */}
+        <div>
+          <h4 className="font-semibold text-blue-600 mb-2">ASSETS</h4>
+          <Table>
+            <TableBody>
+              {data.assets?.accounts?.map((account: any, index: number) => (
+                <TableRow key={index}>
+                  <TableCell>{account.accountName}</TableCell>
+                  <TableCell className="text-right">${account.amount.toLocaleString()}</TableCell>
+                </TableRow>
+              ))}
+              <TableRow className="font-bold border-t">
+                <TableCell>Total Assets</TableCell>
+                <TableCell className="text-right">${data.assets?.total.toLocaleString()}</TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        </div>
+        
+        {/* Liabilities & Equity */}
+        <div>
+          <h4 className="font-semibold text-red-600 mb-2">LIABILITIES</h4>
+          <Table>
+            <TableBody>
+              {data.liabilities?.accounts?.map((account: any, index: number) => (
+                <TableRow key={index}>
+                  <TableCell>{account.accountName}</TableCell>
+                  <TableCell className="text-right">${account.amount.toLocaleString()}</TableCell>
+                </TableRow>
+              ))}
+              <TableRow className="font-bold border-t">
+                <TableCell>Total Liabilities</TableCell>
+                <TableCell className="text-right">${data.liabilities?.total.toLocaleString()}</TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+          
+          <h4 className="font-semibold text-green-600 mb-2 mt-4">EQUITY</h4>
+          <Table>
+            <TableBody>
+              {data.equity?.accounts?.map((account: any, index: number) => (
+                <TableRow key={index}>
+                  <TableCell>{account.accountName}</TableCell>
+                  <TableCell className="text-right">${account.amount.toLocaleString()}</TableCell>
+                </TableRow>
+              ))}
+              <TableRow className="font-bold border-t">
+                <TableCell>Total Equity</TableCell>
+                <TableCell className="text-right">${data.equity?.total.toLocaleString()}</TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        </div>
+      </div>
+      
+      {data.isBalanced ? (
+        <div className="text-green-600 font-medium">✓ Balance Sheet is balanced</div>
+      ) : (
+        <div className="text-red-600 font-medium">⚠ Balance Sheet is NOT balanced</div>
+      )}
+    </div>
+  );
+
+  const renderReportContent = () => {
+    if (!reportData) return null;
+    
+    switch (selectedReport) {
+      case 'trial-balance':
+        return renderTrialBalance(reportData);
+      case 'profit-loss':
+        return renderProfitLoss(reportData);
+      case 'balance-sheet':
+        return renderBalanceSheet(reportData);
+      default:
+        return (
+          <div className="text-center py-8">
+            <p className="text-gray-600">Report content for {reportData.reportType}</p>
+            <pre className="text-xs mt-4 p-4 bg-gray-100 rounded overflow-auto text-left">
+              {JSON.stringify(reportData, null, 2)}
+            </pre>
+          </div>
+        );
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-emerald-50 p-6">
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="text-center">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Financial Reports</h1>
+          <p className="text-gray-600">Generate detailed financial reports with real-time data</p>
+        </div>
+
+        {/* Controls */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Report Configuration
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div>
+                <Label htmlFor="report-type">Report Type</Label>
+                <Select value={selectedReport} onValueChange={setSelectedReport}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select report type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {reportTypes.map((type) => (
+                      <SelectItem key={type.value} value={type.value}>
+                        {type.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              {selectedReport !== 'balance-sheet' ? (
+                <>
+                  <div>
+                    <Label htmlFor="start-date">Start Date</Label>
+                    <Input
+                      id="start-date"
+                      type="date"
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="end-date">End Date</Label>
+                    <Input
+                      id="end-date"
+                      type="date"
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                    />
+                  </div>
+                </>
+              ) : (
+                <div>
+                  <Label htmlFor="as-of-date">As of Date</Label>
+                  <Input
+                    id="as-of-date"
+                    type="date"
+                    value={asOfDate}
+                    onChange={(e) => setAsOfDate(e.target.value)}
+                  />
+                </div>
+              )}
+              
+              <div className="flex items-end gap-2">
+                <Button onClick={fetchReport} disabled={loading} className="flex-1">
+                  {loading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <FileText className="h-4 w-4 mr-2" />
+                      Generate
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+            
+            {/* Export Buttons */}
+            {reportData && (
+              <div className="flex gap-2 pt-4 border-t">
+                <Button variant="outline" onClick={handleExportPDF} className="flex items-center gap-2">
+                  <Download className="h-4 w-4" />
+                  Export PDF
+                </Button>
+                <Button variant="outline" onClick={handleExportExcel} className="flex items-center gap-2">
+                  <Download className="h-4 w-4" />
+                  Export Excel
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Error Display */}
+        {error && (
+          <Card className="border-red-200">
+            <CardContent className="pt-6">
+              <div className="text-red-600 text-center">
+                <p className="font-medium">Error generating report</p>
+                <p className="text-sm mt-1">{error}</p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Report Content */}
+        {loading && (
+          <Card>
+            <CardContent className="pt-6">
+              <div className="text-center py-12">
+                <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4 text-blue-600" />
+                <p className="text-lg text-gray-600">Generating report...</p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {reportData && !loading && (
+          <Card>
+            <CardContent className="pt-6">
+              {renderReportContent()}
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    </div>
+  );
+}

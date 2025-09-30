@@ -1,0 +1,29 @@
+29.93 [plugin:vite:reporter] [plugin vite:reporter] 
+29.93 (!) /app/node_modules/xlsx/xlsx.mjs is dynamically imported by /app/client/src/pages/ReportsNew.tsx but also statically imported by /app/client/src/components/customers/CustomerProfileDialog.tsx, /app/client/src/pages/OrdersHistory.tsx, dynamic import will not move module into another chunk.
+29.93 
+30.05 computing gzip size...
+30.17 ../dist/public/index.html                               0.63 kB │ gzip:   0.38 kB
+30.17 ../dist/public/assets/hazard_1_3-CJajchUP.png          99.36 kB
+30.17 ../dist/public/assets/hazard_0_1-BWFuKD5X.png         105.50 kB
+30.18 ../dist/public/assets/hazard_1_0-BWWtzfWq.png         110.65 kB
+30.18 ../dist/public/assets/hazard_1_1-Dn91orsj.png         124.59 kB
+30.18 ../dist/public/assets/hazard_0_3-BC9Z-ue0.png         127.18 kB
+30.18 ../dist/public/assets/hazard_0_2-BGxxhWeS.png         129.90 kB
+30.18 ../dist/public/assets/hazard_1_2-Cda9ovg1.png         130.75 kB
+30.18 ../dist/public/assets/hazard_1_4-dVCwdC9H.png         142.71 kB
+30.18 ../dist/public/assets/hazard_0_4-B4mpLgjb.png         152.92 kB
+30.18 ../dist/public/assets/hazard_0_0-C_IuVt7k.png         216.48 kB
+30.18 ../dist/public/assets/P_1749320448134-GHIxsyIP.png  1,133.30 kB
+30.18 ../dist/public/assets/index-vm7vd_85.css              109.30 kB │ gzip:  18.62 kB
+30.18 ../dist/public/assets/purify.es-CF4_YkFU.js            21.86 kB │ gzip:   8.62 kB
+30.18 ../dist/public/assets/index.es-DXDdJA0Y.js            149.98 kB │ gzip:  51.25 kB
+30.18 ../dist/public/assets/index-BRzDC2_Q.js             3,403.71 kB │ gzip: 865.02 kB
+30.18 
+30.18 (!) Some chunks are larger than 500 kB after minification. Consider:
+30.18 - Using dynamic import() to code-split the application
+30.18 - Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+30.18 - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+30.18 ✓ built in 27.93s
+30.42 ✘ [ERROR] The entry point "server/index.ts" cannot be marked as external
+30.42 
+30.42 1 error

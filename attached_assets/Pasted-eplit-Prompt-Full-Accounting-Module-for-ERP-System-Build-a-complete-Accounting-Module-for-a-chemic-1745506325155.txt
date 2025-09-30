@@ -1,0 +1,81 @@
+eplit Prompt: Full Accounting Module for ERP System
+
+Build a complete Accounting Module for a chemical trading ERP system using:
+Frontend: React.js (with protected routes and styled tables)
+Backend: FastAPI (Python)
+Database: PostgreSQL
+Authentication: JWT-based admin access
+📘 Functional Modules:
+1. 📂 Chart of Accounts
+
+Create/Edit/Delete accounts
+Account types: Assets, Liabilities, Income, Expenses, Equity
+Allow grouping of accounts and sub-accounts
+2. 🧾 Journal Entries
+
+Manual double-entry input (debit/credit)
+Auto-post journal entries from:
+Sales Invoices
+Payments received
+Inventory updates (if affecting cost)
+Validate: total debit = total credit
+3. 📚 General Ledger
+
+View all journal entries grouped by account
+Filter by account, date range
+Show running balance
+4. 💳 Accounts Receivable
+
+Track unpaid or partially paid invoices
+Generate customer aging report
+Export statement per customer
+5. 💸 Accounts Payable
+
+Track vendor bills and payment status
+Generate vendor balance report
+Add due date alerts
+6. 🏦 Bank & Cash
+
+Record bank deposits and withdrawals
+Track cash-in/cash-out
+Perform bank reconciliation
+7. 📊 Financial Reports
+
+A) Profit & Loss (P&L) Statement
+Route: GET /api/reports/pnl?start=YYYY-MM-DD&end=YYYY-MM-DD
+Grouped by:
+Revenue
+COGS (Cost of Goods Sold)
+Operating Expenses
+Other Income/Expenses
+Net Profit
+Export to PDF / CSV
+Date range picker in frontend
+B) Balance Sheet
+Route: GET /api/reports/balance-sheet?date=YYYY-MM-DD
+Show:
+Assets = Liabilities + Equity
+Group by type
+C) Cash Flow Statement
+Show net inflows/outflows
+Filter by date
+8. 🔍 Audit Trail
+
+Log all edits to journal entries or posted records
+Track who changed what and when
+🛢️ Database Tables to Include:
+accounts: id, name, type (Asset, Liability, etc.), parent_id
+journal_entries: id, date, memo
+journal_lines: id, journal_id, account_id, debit, credit
+customers, vendors, products, invoices (linked to accounting system)
+📱 Frontend Requirements (React):
+Tabs: Chart of Accounts, Journal Entries, Ledger, Reports
+Data tables using react-table
+Filters by account/date range
+Date pickers for reports
+Export to PDF/CSV
+Visual indicators (profits ↑, expenses ↓ vs last period)
+🧠 Business Logic Notes:
+Use double-entry system for every transaction
+Debit = Credit must always hold
+P&L resets each fiscal year, Balance Sheet carries forward

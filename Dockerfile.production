@@ -1,0 +1,89 @@
+# Premier ERP System - Multi-stage Production Build
+# Stage 1: Build Frontend
+FROM node:18-alpine AS frontend-builder
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+COPY tsconfig*.json ./
+
+# Install all dependencies
+RUN npm ci
+
+# Copy frontend source
+COPY client/ ./client/
+COPY shared/ ./shared/
+COPY index.html ./
+COPY vite.config.ts ./
+COPY tailwind.config.ts ./
+COPY postcss.config.js ./
+
+# Build frontend
+RUN npm run build:client
+
+# Stage 2: Build Backend
+FROM node:18-alpine AS backend-builder
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+COPY tsconfig*.json ./
+
+# Install dependencies
+RUN npm ci
+
+# Copy backend source
+COPY server/ ./server/
+COPY shared/ ./shared/
+
+# Build backend
+RUN npm run build:server
+
+# Stage 3: Production Runtime
+FROM node:18-alpine
+
+# Install curl for health checks and dumb-init for proper signal handling
+RUN apk add --no-cache curl dumb-init
+
+WORKDIR /app
+
+# Copy package files and install production dependencies only
+COPY package*.json ./
+RUN npm ci --only=production
+
+# Copy built frontend from builder
+COPY --from=frontend-builder /app/dist ./dist
+
+# Copy built backend from builder
+COPY --from=backend-builder /app/dist ./dist
+
+# Copy necessary runtime files
+COPY --from=backend-builder /app/shared ./shared
+
+# Create necessary directories
+RUN mkdir -p uploads logs attached_assets
+
+# Create non-root user
+RUN addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001
+RUN chown -R nodejs:nodejs /app
+
+# Switch to non-root user
+USER nodejs
+
+# Environment
+ENV NODE_ENV=production
+ENV PORT=5000
+
+EXPOSE 5000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
+  CMD curl -f http://localhost:5000/api/health || exit 1
+
+# Use dumb-init to handle signals properly
+ENTRYPOINT ["dumb-init", "--"]
+
+# Start production server
+CMD ["node", "dist/server/index.js"]

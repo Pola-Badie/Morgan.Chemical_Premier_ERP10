@@ -1,0 +1,85 @@
+Here’s the **full consolidated prompt** you can copy and paste into Replit or share with a developer to create the ERP system:
+
+---
+
+**🧠 FULL REPLIT PROMPT:**
+
+---
+
+> ✅ Build a full-stack ERP system for a **chemicals trading company** using:
+>
+> ### 🧰 Tech Stack:
+> - **Frontend:** React.js (with Tailwind CSS or Bootstrap)
+> - **Backend:** FastAPI (Python) with SQLAlchemy
+> - **Database:** PostgreSQL (use Supabase or Railway for hosting in production)
+> - **Authentication:** OAuth2 with JWT tokens
+> - **Charts:** Chart.js or Recharts
+>
+> ### 🖥️ Features:
+> 1. **Inventory Management**
+>    - Add/Edit/Delete product categories (e.g., Acids, Solvents)
+>    - Track quantities, status: In Stock, Low Stock, Out of Stock
+>    - Expiry alerts for products (e.g., < 60 days)
+>
+> 2. **Sales Module**
+>    - Create sales orders linked to customers
+>    - Auto-deduct quantities from stock
+>    - Line chart for monthly sales overview
+>
+> 3. **Invoices**
+>    - Create invoices with partial payment support
+>    - Mark invoices as Paid, Partial, or Unpaid
+>    - View pending invoices per customer
+>
+> 4. **Dashboard Overview**
+>    - Total customers
+>    - New customers this month
+>    - Today’s sales
+>    - Monthly sales
+>    - Sales overview (line chart)
+>    - Sales distribution by category (pie chart)
+>    - Expiring products (table)
+>    - Products with low stock (table)
+>
+> 5. **Admin Panel**
+>    - Manage users and roles (Admin, Stock Manager, Sales Rep)
+>    - Add/remove product categories and settings
+>
+> ### 🧱 File Structure:
+> ```
+> /erp-chemicals/
+> ├── frontend/ (React)
+> │   ├── components/
+> │   ├── pages/
+> │   └── App.jsx
+> ├── backend/ (FastAPI)
+> │   ├── models/
+> │   ├── routes/
+> │   ├── schemas/
+> │   ├── database.py
+> │   └── main.py
+> └── requirements.txt
+> ```
+>
+> ### 🔌 Backend Route Examples:
+> - `/api/categories/` – Add new product category
+> - `/api/invoices/` – Create invoice with amount_due and amount_paid
+> - `/api/invoices/pending/` – Get list of invoices not fully paid
+>
+> ### 🧭 React UI Requirements:
+> - Sidebar menu with sections: Dashboard, Inventory, Sales, Invoices, Reports
+> - Dashboard page with:
+>   - Sales line chart
+>   - Product performance pie chart
+>   - Expiring products table
+>   - Low stock warning table
+>
+> ### 🔐 Optional Add-ons (if possible):
+> - Login/Signup using JWT
+> - PostgreSQL connection with hosted DB (e.g., Supabase)
+> - Export reports to PDF
+> - Notifications for expiring or low-stock products
+
+---
+
+This is a copy-paste-ready Replit or dev prompt. Let me know if you'd like me to convert it into a README format or API documentation too!

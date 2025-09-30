@@ -1,0 +1,93 @@
+your job is to define a complete and functional ERP accounting scope for real-world accountants. The goal is to track money in and out, journal every transaction, and support day-to-day bookkeeping.
+
+📜 ✅ Prompt to Build Full Accounting Roles (For Operational Accountants)
+
+Build the full Accounting Module in the ERP system focused on day-to-day accounting tasks (not CFO-level analysis). The features should serve operational accountants handling purchases, payments, ledgers, and transactions.
+👥 Target User:
+Internal Accountant (not a finance strategist)
+Needs access to ledgers, journals, trial balance, and invoice settlement
+🧩 Functional Modules Required:
+1. Chart of Accounts
+
+Full list of account categories (Assets, Liabilities, Equity, Income, Expenses)
+Allow creating and editing of sub-accounts
+Support account codes (e.g., 1010 for Cash, 4010 for Sales)
+2. General Ledger (GL)
+
+Record of all transactions affecting accounts
+Filter by date range, account, or transaction type
+Automatically updated from journal entries
+3. Journal Entries
+
+Manual entry interface for double-entry accounting
+Required fields:
+Date
+Debit Account
+Credit Account
+Amount
+Reference/Description
+Validate that Debit = Credit
+4. Customer Payments & Settlements
+
+Track invoice payments
+Allocate partial or full payments to open invoices
+Link payment transactions to journal automatically
+5. Vendor Bills & Payments
+
+Record vendor bills
+Record outgoing payments
+Link to vendor profile and generate payable aging report
+6. Trial Balance
+
+Summary report showing balances of all accounts
+Should dynamically reflect journal activity
+7. Tax Configuration (Optional)
+
+Add local tax types (e.g., VAT)
+Allow tax configuration per account or transaction type
+8. Accounting Periods
+
+Allow opening/closing accounting periods (month, quarter, year)
+Lock previous periods to prevent edits
+9. Permissions (for accounting roles only)
+
+Accountants should have access only to:
+Journals
+Chart of accounts
+Payments
+GL
+Trial balance
+No access to CFO-level reports like P&L, Balance Sheet (unless assigned)
+🧾 Data Models Needed:
+🧮 Account
+
+id, name, code, type (asset, expense, etc.), parent_account_id
+📓 JournalEntry
+
+id, date, description
+📊 JournalLine
+
+id, journal_entry_id, account_id, debit, credit, description
+💵 Payment
+
+id, customer_id or vendor_id, amount, payment_date, related_invoice_id
+📜 Invoice
+
+id, customer_id, status, total, due_date
+🏦 VendorBill
+
+id, vendor_id, amount, status, due_date
+📆 AccountingPeriod
+
+id, period_name, start_date, end_date, status (open/closed)
+🔍 Reports Needed:
+Trial Balance (real-time)
+Journal Report (filterable)
+GL Activity Report (account-wise)
+Payment vs Invoice Aging
+🎯 Key Focus:
+
+Double-entry accounting logic
+Simplicity for the accountant
+Real-time ledger impact from journals and payments
+Expandable into advanced reporting in future ph

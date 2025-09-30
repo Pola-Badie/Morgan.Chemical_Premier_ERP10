@@ -1,0 +1,82 @@
+URGENT: FIX APP CRASHES - STABILITY ISSUE
+
+My app is crashing every 2 minutes. This is blocking all development and testing. Please diagnose and fix all stability issues immediately.
+
+## 🚨 CRITICAL STABILITY FIXES NEEDED
+
+### 1. MEMORY LEAK INVESTIGATION
+- Check for memory leaks in React components
+- Fix any infinite loops or recursive function calls
+- Remove unnecessary event listeners
+- Clean up useEffect dependencies and cleanup functions
+- Fix any circular references
+
+### 2. DATABASE CONNECTION ISSUES
+- Fix database connection pool exhaustion
+- Add proper connection error handling
+- Implement connection retry logic
+- Check for unclosed database connections
+- Add database connection timeout settings
+
+### 3. SERVER STABILITY FIXES
+- Add proper error handling to all API routes
+- Fix any unhandled promise rejections
+- Add try-catch blocks to all async functions
+- Implement graceful shutdown handling
+- Fix any synchronous operations blocking the event loop
+
+### 4. FRONTEND CRASH PREVENTION
+- Add React Error Boundaries to catch component crashes
+- Fix any infinite re-renders
+- Remove console.log statements that might cause issues
+- Fix any undefined variable access
+- Add proper null checks
+
+### 5. RESOURCE MANAGEMENT
+- Limit API request frequency
+- Add request debouncing for search/filter operations
+- Fix any large data loading without pagination
+- Optimize image and file handling
+- Clean up intervals and timers
+
+### 6. COMMON CRASH CAUSES TO FIX
+- Fix any missing dependencies in useEffect
+- Repair broken API endpoints returning errors
+- Fix malformed database queries
+- Correct any infinite state updates
+- Remove any synchronous file operations
+
+### 7. ADD CRASH RECOVERY
+- Implement automatic restart on crash
+- Add comprehensive error logging
+- Create health check endpoints
+- Add monitoring for memory usage
+- Implement graceful error handling
+
+### 8. PERFORMANCE OPTIMIZATION
+- Add React.memo to prevent unnecessary re-renders
+- Optimize database queries
+- Reduce bundle size
+- Fix any memory-intensive operations
+- Add loading states to prevent multiple concurrent requests
+
+## 🔧 IMMEDIATE DIAGNOSTIC STEPS
+
+1. **Check Console Errors**: Look for JavaScript errors in browser console
+2. **Check Server Logs**: Identify server-side error patterns
+3. **Monitor Memory Usage**: Check for memory spikes before crashes
+4. **Database Connection**: Verify database stability
+5. **API Response Times**: Check for hanging requests
+
+## ✅ STABILITY REQUIREMENTS
+
+The app should:
+- Run continuously without crashes
+- Handle errors gracefully without crashing
+- Manage memory efficiently
+- Maintain stable database connections
+- Provide smooth user experience
+
+**PRIORITY: Make the app stable and crash-free before any other features. This is blocking all development work.**
+
+Report what's causing the crashes and implement fixes immediately.

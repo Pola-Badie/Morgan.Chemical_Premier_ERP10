@@ -1,0 +1,106 @@
+version: '3.8'
+
+services:
+  # Nginx Reverse Proxy with SSL
+  nginx-proxy:
+    image: nginx:alpine
+    container_name: premier-erp-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx-production.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl-certs:/etc/nginx/ssl:ro
+      - certbot_webroot:/var/www/certbot:ro
+    depends_on:
+      frontend:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+    networks:
+      - erp-network
+
+  # Certbot for SSL certificates
+  certbot:
+    image: certbot/certbot
+    container_name: premier-erp-certbot
+    volumes:
+      - ./ssl-certs:/etc/letsencrypt
+      - certbot_webroot:/var/www/certbot
+    command: certonly --webroot --webroot-path=/var/www/certbot --email support@premiererp.io --agree-tos --no-eff-email -d demo.premiererp.io
+    depends_on:
+      - nginx-proxy
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: premier-erp-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: premier_erp
+      POSTGRES_USER: erp_user
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-erp_secure_password_2024}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - erp-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U erp_user -d premier_erp"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Premier ERP Backend
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: premier-erp-app
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DATABASE_URL= 'postgresql://neondb_owner:npg_RgYqcf8Q4vVo@ep-solitary-bar-adggyh8w-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require'
+: postgresql://erp_user:${POSTGRES_PASSWORD:-erp_secure_password_2024}@postgres:5432/premier_erp
+      PORT: 5000
+      DOMAIN: demo.premiererp.io
+    networks:
+      - erp-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/dashboard/summary"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+  # Premier ERP Frontend
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: premier-erp-frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - erp-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+volumes:
+  postgres_data:
+    driver: local
+  certbot_webroot:
+    driver: local
+
+networks:
+  erp-network:
+    driver: bridge

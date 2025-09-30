@@ -1,0 +1,2 @@
+name,drugName,sku,costPrice,sellingPrice,quantity,unitOfMeasure,location
+Test Product,Test Drug,TEST-001,10.00,20.00,100,Tablets,Main Warehouse

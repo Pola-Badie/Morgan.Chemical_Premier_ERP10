@@ -1,0 +1,16 @@
+name,drugName,sku,costPrice,sellingPrice,quantity,unitOfMeasure,location,description,lowStockThreshold,status,categoryId,productType,expiryDate,notes
+High-Volume Antibiotics,Cephalexin 500mg,CEPH-500-HV001,12.50,29.99,2500,Capsules,Main Warehouse,"High-volume antibiotic for general infections",100,active,1,finished,2026-01-15,Popular prescription medication
+Premium Vitamins,Multivitamin Complex,MULTI-VIT-P002,8.75,24.50,1800,Tablets,Main Warehouse,"Complete daily vitamin supplement",75,active,1,finished,2026-06-30,Health supplement bestseller
+Specialized Injections,Morphine 10mg/ml,MORPH-10-S003,125.00,285.00,200,Vials,Temperature-Controlled Storage,"Pain management injection - controlled substance",10,active,1,finished,2025-11-20,Requires special handling
+Industrial Raw Material,Pharmaceutical Grade Ethanol,PG-ETHANOL-004,55.00,0.00,1000,L,Raw Materials Section,"99.9% pure ethanol for pharmaceutical production",50,active,2,raw,,Chemical precursor
+Premium Packaging,Blister Pack Strips,BLISTER-PACK-005,3.25,0.00,8000,PCS,Packaging,"High-quality blister packaging for tablets",300,active,3,packaging,,Pharmaceutical grade packaging
+Critical Care Medicine,Epinephrine Auto-Injector,EPI-AUTO-006,180.00,350.00,100,Units,Temperature-Controlled Storage,"Emergency allergy treatment device",5,active,1,finished,2025-12-10,Life-saving medication
+Bulk Supplements,Calcium Carbonate 1000mg,CALC-CARB-007,4.50,15.99,3000,Tablets,Finished Goods Area,"Calcium supplement for bone health",150,active,1,finished,2026-08-25,Bulk inventory item
+Processing Chemical,Purified Water for Injection,WFI-PURE-008,25.00,0.00,500,L,Raw Materials Section,"USP grade water for pharmaceutical manufacturing",25,active,2,raw,,Manufacturing essential
+Sterile Containers,Sterile Glass Ampoules 2ml,AMPOULE-2ML-009,2.15,0.00,5000,PCS,Packaging,"Sterile glass containers for injections",200,active,3,packaging,,Medical grade containers
+Cardiac Medication,Atorvastatin 20mg,ATORVA-20-010,22.50,58.75,750,Tablets,Main Warehouse,"Cholesterol-lowering medication",35,active,1,finished,2025-10-05,Prescription medication
+Pain Management,Ibuprofen 400mg Gel,IBU-GEL-011,14.25,32.50,600,Tubes,Main Warehouse,"Topical anti-inflammatory gel",30,active,1,finished,2025-09-15,OTC medication
+Laboratory Chemical,Sodium Chloride USP,NACL-USP-012,18.00,0.00,800,KG,Raw Materials Section,"Pharmaceutical grade salt for solutions",40,active,2,raw,,Laboratory standard
+Quality Packaging,Child-Resistant Bottles 100ml,CRB-100ML-013,1.85,0.00,4000,PCS,Packaging,"Safety bottles for liquid medications",175,active,3,packaging,,Safety compliant
+Respiratory Medicine,Salbutamol Inhaler,SALBU-INH-014,35.50,79.99,400,Inhalers,Temperature-Controlled Storage,"Bronchodilator for asthma treatment",20,active,1,finished,2025-12-31,Prescription inhaler
+Nutritional Product,Protein Powder 1kg,PROTEIN-1KG-015,28.00,65.00,200,Containers,Finished Goods Area,"High-quality whey protein supplement",10,active,1,finished,2026-04-18,Sports nutrition

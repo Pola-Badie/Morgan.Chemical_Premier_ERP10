@@ -1,0 +1,199 @@
+2025-09-28T23:35:33.000000000Z [inf]  Starting Container
+2025-09-28T23:35:34.837941832Z [inf]  
+2025-09-28T23:35:34.837946570Z [inf]  > rest-express@1.0.0 start
+2025-09-28T23:35:34.837952230Z [inf]  > NODE_ENV=production node dist/server/index.js
+2025-09-28T23:35:34.837956760Z [inf]  
+2025-09-28T23:35:34.837961475Z [err]  node:internal/modules/cjs/loader:1143
+2025-09-28T23:35:34.837966673Z [err]    throw err;
+2025-09-28T23:35:34.837971503Z [err]    ^
+2025-09-28T23:35:34.837975881Z [err]  
+2025-09-28T23:35:34.837979946Z [err]  Error: Cannot find module '/app/dist/server/index.js'
+2025-09-28T23:35:34.837984796Z [err]      at Module._resolveFilename (node:internal/modules/cjs/loader:1140:15)
+2025-09-28T23:35:34.837988603Z [err]      at Module._load (node:internal/modules/cjs/loader:981:27)
+2025-09-28T23:35:34.837993282Z [err]      at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:128:12)
+2025-09-28T23:35:34.837998038Z [err]      at node:internal/main/run_main_module:28:49 {
+2025-09-28T23:35:34.838001882Z [err]    code: 'MODULE_NOT_FOUND',
+2025-09-28T23:35:34.838006390Z [err]    requireStack: []
+2025-09-28T23:35:34.838010984Z [err]  }
+2025-09-28T23:35:34.838014988Z [err]  
+2025-09-28T23:35:34.838019096Z [err]  Node.js v18.20.8
+2025-09-28T23:35:35.782706660Z [inf]  
+2025-09-28T23:35:35.782724203Z [inf]  > rest-express@1.0.0 start
+2025-09-28T23:35:35.782733956Z [inf]  > NODE_ENV=production node dist/server/index.js
+2025-09-28T23:35:35.782810398Z [inf]  
+2025-09-28T23:35:35.840200832Z [err]  node:internal/modules/cjs/loader:1143
+2025-09-28T23:35:35.840208266Z [err]    throw err;
+2025-09-28T23:35:35.840215736Z [err]    ^
+2025-09-28T23:35:35.840222692Z [err]  
+2025-09-28T23:35:35.840230067Z [err]  Error: Cannot find module '/app/dist/server/index.js'
+2025-09-28T23:35:35.840236665Z [err]      at Module._resolveFilename (node:internal/modules/cjs/loader:1140:15)
+2025-09-28T23:35:35.840244265Z [err]      at Module._load (node:internal/modules/cjs/loader:981:27)
+2025-09-28T23:35:35.840250918Z [err]      at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:128:12)
+2025-09-28T23:35:35.840258335Z [err]      at node:internal/main/run_main_module:28:49 {
+2025-09-28T23:35:35.840265407Z [err]    code: 'MODULE_NOT_FOUND',
+2025-09-28T23:35:35.840269481Z [err]    requireStack: []
+2025-09-28T23:35:35.840273426Z [err]  }
+2025-09-28T23:35:35.840277615Z [err]  
+2025-09-28T23:35:35.840281409Z [err]  Node.js v18.20.8
+2025-09-28T23:35:37.419830169Z [inf]  
+2025-09-28T23:35:37.419839412Z [inf]  > rest-express@1.0.0 start
+2025-09-28T23:35:37.419845159Z [inf]  > NODE_ENV=production node dist/server/index.js
+2025-09-28T23:35:37.419849713Z [inf]  
+2025-09-28T23:35:37.438010016Z [err]  node:internal/modules/cjs/loader:1143
+2025-09-28T23:35:37.438018460Z [err]    throw err;
+2025-09-28T23:35:37.438023762Z [err]    ^
+2025-09-28T23:35:37.438029281Z [err]  
+2025-09-28T23:35:37.438034769Z [err]  Error: Cannot find module '/app/dist/server/index.js'
+2025-09-28T23:35:37.438040715Z [err]      at Module._resolveFilename (node:internal/modules/cjs/loader:1140:15)
+2025-09-28T23:35:37.438046379Z [err]      at Module._load (node:internal/modules/cjs/loader:981:27)
+2025-09-28T23:35:37.438052047Z [err]      at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:128:12)
+2025-09-28T23:35:37.438060189Z [err]      at node:internal/main/run_main_module:28:49 {
+2025-09-28T23:35:37.438065918Z [err]    code: 'MODULE_NOT_FOUND',
+2025-09-28T23:35:37.438071472Z [err]    requireStack: []
+2025-09-28T23:35:37.438077630Z [err]  }
+2025-09-28T23:35:37.438082959Z [err]  
+2025-09-28T23:35:37.438088509Z [err]  Node.js v18.20.8
+2025-09-28T23:35:39.041758948Z [inf]  
+2025-09-28T23:35:39.041766859Z [inf]  > rest-express@1.0.0 start
+2025-09-28T23:35:39.041773868Z [inf]  > NODE_ENV=production node dist/server/index.js
+2025-09-28T23:35:39.041781046Z [inf]  
+2025-09-28T23:35:39.124390443Z [err]  node:internal/modules/cjs/loader:1143
+2025-09-28T23:35:39.124396636Z [err]    throw err;
+2025-09-28T23:35:39.124404537Z [err]    ^
+2025-09-28T23:35:39.124410630Z [err]  
+2025-09-28T23:35:39.124416240Z [err]  Error: Cannot find module '/app/dist/server/index.js'
+2025-09-28T23:35:39.124422226Z [err]      at Module._resolveFilename (node:internal/modules/cjs/loader:1140:15)
+2025-09-28T23:35:39.124427418Z [err]      at Module._load (node:internal/modules/cjs/loader:981:27)
+2025-09-28T23:35:39.124432851Z [err]      at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:128:12)
+2025-09-28T23:35:39.124438755Z [err]      at node:internal/main/run_main_module:28:49 {
+2025-09-28T23:35:39.124443937Z [err]    code: 'MODULE_NOT_FOUND',
+2025-09-28T23:35:39.124448784Z [err]    requireStack: []
+2025-09-28T23:35:39.124453683Z [err]  }
+2025-09-28T23:35:39.124458596Z [err]  
+2025-09-28T23:35:39.124464365Z [err]  Node.js v18.20.8
+2025-09-28T23:35:41.187460018Z [inf]  
+2025-09-28T23:35:41.187468534Z [inf]  > rest-express@1.0.0 start
+2025-09-28T23:35:41.187473910Z [inf]  > NODE_ENV=production node dist/server/index.js
+2025-09-28T23:35:41.187478712Z [inf]  
+2025-09-28T23:35:41.233072824Z [err]  node:internal/modules/cjs/loader:1143
+2025-09-28T23:35:41.233080382Z [err]    throw err;
+2025-09-28T23:35:41.233084691Z [err]    ^
+2025-09-28T23:35:41.233089023Z [err]  
+2025-09-28T23:35:41.233093727Z [err]  Error: Cannot find module '/app/dist/server/index.js'
+2025-09-28T23:35:41.233098132Z [err]      at Module._resolveFilename (node:internal/modules/cjs/loader:1140:15)
+2025-09-28T23:35:41.233102758Z [err]      at Module._load (node:internal/modules/cjs/loader:981:27)
+2025-09-28T23:35:41.233127119Z [err]      at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:128:12)
+2025-09-28T23:35:41.233132286Z [err]      at node:internal/main/run_main_module:28:49 {
+2025-09-28T23:35:41.233137008Z [err]    code: 'MODULE_NOT_FOUND',
+2025-09-28T23:35:41.233144861Z [err]    requireStack: []
+2025-09-28T23:35:41.233149751Z [err]  }
+2025-09-28T23:35:41.233154178Z [err]  
+2025-09-28T23:35:41.233158002Z [err]  Node.js v18.20.8
+2025-09-28T23:35:42.840723712Z [inf]  
+2025-09-28T23:35:42.840731231Z [inf]  > rest-express@1.0.0 start
+2025-09-28T23:35:42.840738522Z [inf]  > NODE_ENV=production node dist/server/index.js
+2025-09-28T23:35:42.840745615Z [inf]  
+2025-09-28T23:35:42.917226506Z [err]  node:internal/modules/cjs/loader:1143
+2025-09-28T23:35:42.917231091Z [err]    throw err;
+2025-09-28T23:35:42.917237827Z [err]    ^
+2025-09-28T23:35:42.917242723Z [err]  
+2025-09-28T23:35:42.917247092Z [err]  Error: Cannot find module '/app/dist/server/index.js'
+2025-09-28T23:35:42.917250865Z [err]      at Module._resolveFilename (node:internal/modules/cjs/loader:1140:15)
+2025-09-28T23:35:42.917254876Z [err]      at Module._load (node:internal/modules/cjs/loader:981:27)
+2025-09-28T23:35:42.917259691Z [err]      at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:128:12)
+2025-09-28T23:35:42.917264469Z [err]      at node:internal/main/run_main_module:28:49 {
+2025-09-28T23:35:42.917268587Z [err]    code: 'MODULE_NOT_FOUND',
+2025-09-28T23:35:42.917272644Z [err]    requireStack: []
+2025-09-28T23:35:42.917277263Z [err]  }
+2025-09-28T23:35:42.917281349Z [err]  
+2025-09-28T23:35:42.917293808Z [err]  Node.js v18.20.8
+2025-09-28T23:35:44.736610693Z [inf]  
+2025-09-28T23:35:44.736622220Z [inf]  > rest-express@1.0.0 start
+2025-09-28T23:35:44.736629306Z [inf]  > NODE_ENV=production node dist/server/index.js
+2025-09-28T23:35:44.736636158Z [inf]  
+2025-09-28T23:35:44.790611344Z [err]  node:internal/modules/cjs/loader:1143
+2025-09-28T23:35:44.790621446Z [err]    throw err;
+2025-09-28T23:35:44.790627545Z [err]    ^
+2025-09-28T23:35:44.790635374Z [err]  
+2025-09-28T23:35:44.790642497Z [err]  Error: Cannot find module '/app/dist/server/index.js'
+2025-09-28T23:35:44.790648989Z [err]      at Module._resolveFilename (node:internal/modules/cjs/loader:1140:15)
+2025-09-28T23:35:44.790654930Z [err]      at Module._load (node:internal/modules/cjs/loader:981:27)
+2025-09-28T23:35:44.790662212Z [err]      at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:128:12)
+2025-09-28T23:35:44.790668029Z [err]      at node:internal/main/run_main_module:28:49 {
+2025-09-28T23:35:44.790674214Z [err]    code: 'MODULE_NOT_FOUND',
+2025-09-28T23:35:44.790680445Z [err]    requireStack: []
+2025-09-28T23:35:44.790687096Z [err]  }
+2025-09-28T23:35:44.790692678Z [err]  
+2025-09-28T23:35:44.790700731Z [err]  Node.js v18.20.8
+2025-09-28T23:35:48.091760725Z [inf]  
+2025-09-28T23:35:48.091774763Z [inf]  > rest-express@1.0.0 start
+2025-09-28T23:35:48.091781647Z [inf]  > NODE_ENV=production node dist/server/index.js
+2025-09-28T23:35:48.091788367Z [inf]  
+2025-09-28T23:35:48.142327151Z [err]  node:internal/modules/cjs/loader:1143
+2025-09-28T23:35:48.142335997Z [err]    throw err;
+2025-09-28T23:35:48.142340684Z [err]    ^
+2025-09-28T23:35:48.142346951Z [err]  
+2025-09-28T23:35:48.142352318Z [err]  Error: Cannot find module '/app/dist/server/index.js'
+2025-09-28T23:35:48.142359073Z [err]      at Module._resolveFilename (node:internal/modules/cjs/loader:1140:15)
+2025-09-28T23:35:48.142365312Z [err]      at Module._load (node:internal/modules/cjs/loader:981:27)
+2025-09-28T23:35:48.142371385Z [err]      at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:128:12)
+2025-09-28T23:35:48.142377034Z [err]      at node:internal/main/run_main_module:28:49 {
+2025-09-28T23:35:48.142384390Z [err]    code: 'MODULE_NOT_FOUND',
+2025-09-28T23:35:48.142390024Z [err]    requireStack: []
+2025-09-28T23:35:48.142396687Z [err]  }
+2025-09-28T23:35:48.142402700Z [err]  
+2025-09-28T23:35:48.142408620Z [err]  Node.js v18.20.8
+2025-09-28T23:35:50.169635071Z [inf]  
+2025-09-28T23:35:50.169640691Z [inf]  > rest-express@1.0.0 start
+2025-09-28T23:35:50.169645946Z [inf]  > NODE_ENV=production node dist/server/index.js
+2025-09-28T23:35:50.169651645Z [inf]  
+2025-09-28T23:35:50.205271126Z [err]  node:internal/modules/cjs/loader:1143
+2025-09-28T23:35:50.205279176Z [err]    throw err;
+2025-09-28T23:35:50.205284075Z [err]    ^
+2025-09-28T23:35:50.205289073Z [err]  
+2025-09-28T23:35:50.205293916Z [err]  Error: Cannot find module '/app/dist/server/index.js'
+2025-09-28T23:35:50.205299301Z [err]      at Module._resolveFilename (node:internal/modules/cjs/loader:1140:15)
+2025-09-28T23:35:50.205304213Z [err]      at Module._load (node:internal/modules/cjs/loader:981:27)
+2025-09-28T23:35:50.205308801Z [err]      at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:128:12)
+2025-09-28T23:35:50.205313169Z [err]      at node:internal/main/run_main_module:28:49 {
+2025-09-28T23:35:50.205319507Z [err]    code: 'MODULE_NOT_FOUND',
+2025-09-28T23:35:50.205328828Z [err]    requireStack: []
+2025-09-28T23:35:50.205333444Z [err]  }
+2025-09-28T23:35:50.205338897Z [err]  
+2025-09-28T23:35:50.205343536Z [err]  Node.js v18.20.8
+2025-09-28T23:35:51.676106998Z [inf]  
+2025-09-28T23:35:51.676114521Z [inf]  > rest-express@1.0.0 start
+2025-09-28T23:35:51.676120254Z [inf]  > NODE_ENV=production node dist/server/index.js
+2025-09-28T23:35:51.676125724Z [inf]  
+2025-09-28T23:35:51.747095617Z [err]  node:internal/modules/cjs/loader:1143
+2025-09-28T23:35:51.747102006Z [err]    throw err;
+2025-09-28T23:35:51.747110437Z [err]    ^
+2025-09-28T23:35:51.747117315Z [err]  
+2025-09-28T23:35:51.747124318Z [err]  Error: Cannot find module '/app/dist/server/index.js'
+2025-09-28T23:35:51.747130987Z [err]      at Module._resolveFilename (node:internal/modules/cjs/loader:1140:15)
+2025-09-28T23:35:51.747140531Z [err]      at Module._load (node:internal/modules/cjs/loader:981:27)
+2025-09-28T23:35:51.747149687Z [err]      at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:128:12)
+2025-09-28T23:35:51.747155821Z [err]      at node:internal/main/run_main_module:28:49 {
+2025-09-28T23:35:51.747161375Z [err]    code: 'MODULE_NOT_FOUND',
+2025-09-28T23:35:51.747166990Z [err]    requireStack: []
+2025-09-28T23:35:51.747172275Z [err]  }
+2025-09-28T23:35:51.747177771Z [err]  
+2025-09-28T23:35:51.747182866Z [err]  Node.js v18.20.8
+2025-09-28T23:35:53.235901651Z [inf]  
+2025-09-28T23:35:53.235908852Z [inf]  > rest-express@1.0.0 start
+2025-09-28T23:35:53.235916599Z [inf]  > NODE_ENV=production node dist/server/index.js
+2025-09-28T23:35:53.235924118Z [inf]  
+2025-09-28T23:35:53.281186509Z [err]  node:internal/modules/cjs/loader:1143
+2025-09-28T23:35:53.281197724Z [err]    throw err;
+2025-09-28T23:35:53.281204537Z [err]    ^
+2025-09-28T23:35:53.281210445Z [err]  
+2025-09-28T23:35:53.281216032Z [err]  Error: Cannot find module '/app/dist/server/index.js'
+2025-09-28T23:35:53.281222200Z [err]      at Module._resolveFilename (node:internal/modules/cjs/loader:1140:15)
+2025-09-28T23:35:53.281229096Z [err]      at Module._load (node:internal/modules/cjs/loader:981:27)
+2025-09-28T23:35:53.281234431Z [err]      at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:128:12)
+2025-09-28T23:35:53.281242384Z [err]      at node:internal/main/run_main_module:28:49 {
+2025-09-28T23:35:53.281249600Z [err]    code: 'MODULE_NOT_FOUND',
+2025-09-28T23:35:53.281256703Z [err]    requireStack: []
+2025-09-28T23:35:53.281263738Z [err]  }
+2025-09-28T23:35:53.281270093Z [err]  
+2025-09-28T23:35:53.281276233Z [err]  Node.js v18.20.8

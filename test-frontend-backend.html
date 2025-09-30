@@ -1,0 +1,170 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premier ERP - Frontend-Backend Integration Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-result { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .warning { background-color: #fff3cd; color: #856404; }
+        .loading { background-color: #cce5ff; color: #004085; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .stats { display: flex; gap: 20px; margin: 20px 0; }
+        .stat { padding: 10px; background: #f8f9fa; border-radius: 5px; text-align: center; }
+    </style>
+</head>
+<body>
+    <h1>🚀 Premier ERP System - Frontend-Backend Integration Test</h1>
+    <p>This test verifies frontend can communicate with backend APIs</p>
+    
+    <div class="stats">
+        <div class="stat">
+            <div>✅ Passed</div>
+            <div id="passed-count">0</div>
+        </div>
+        <div class="stat">
+            <div>❌ Failed</div>
+            <div id="failed-count">0</div>
+        </div>
+        <div class="stat">
+            <div>📊 Total</div>
+            <div id="total-count">0</div>
+        </div>
+        <div class="stat">
+            <div>🎯 Success Rate</div>
+            <div id="success-rate">0%</div>
+        </div>
+    </div>
+
+    <button onclick="runAllTests()">🧪 Run All Tests</button>
+    <button onclick="clearResults()">🧹 Clear Results</button>
+    <button onclick="exportResults()">📄 Export Results</button>
+
+    <div id="results"></div>
+
+    <script>
+        let testResults = [];
+        let passedCount = 0;
+        let failedCount = 0;
+
+        async function testAPI(name, endpoint, expectedCheck) {
+            const resultsDiv = document.getElementById('results');
+            const testDiv = document.createElement('div');
+            testDiv.className = 'test-result loading';
+            testDiv.innerHTML = `🔄 Testing: ${name}`;
+            resultsDiv.appendChild(testDiv);
+
+            try {
+                const response = await fetch(`/api${endpoint}`);
+                const data = await response.json();
+                
+                if (response.ok && (!expectedCheck || expectedCheck(data))) {
+                    testDiv.className = 'test-result success';
+                    testDiv.innerHTML = `✅ PASSED: ${name}`;
+                    passedCount++;
+                    testResults.push({ name, status: 'PASSED' });
+                } else {
+                    throw new Error(`Status: ${response.status}`);
+                }
+            } catch (error) {
+                testDiv.className = 'test-result error';
+                testDiv.innerHTML = `❌ FAILED: ${name} - ${error.message}`;
+                failedCount++;
+                testResults.push({ name, status: 'FAILED', error: error.message });
+            }
+
+            updateStats();
+        }
+
+        function updateStats() {
+            document.getElementById('passed-count').textContent = passedCount;
+            document.getElementById('failed-count').textContent = failedCount;
+            document.getElementById('total-count').textContent = passedCount + failedCount;
+            
+            const total = passedCount + failedCount;
+            const successRate = total > 0 ? Math.round((passedCount / total) * 100) : 0;
+            document.getElementById('success-rate').textContent = successRate + '%';
+        }
+
+        async function runAllTests() {
+            clearResults();
+            
+            // Core API Tests
+            await testAPI('Health Check', '/health', (data) => data.database);
+            await testAPI('Dashboard Summary', '/dashboard/summary', (data) => data.metrics);
+            await testAPI('Inventory Summary', '/inventory/summary', (data) => typeof data.totalProducts === 'number');
+            await testAPI('Accounting Summary', '/accounting/summary');
+            await testAPI('Low Stock Items', '/inventory/low-stock', (data) => Array.isArray(data));
+            await testAPI('Expiring Products', '/inventory/expiring', (data) => Array.isArray(data));
+            await testAPI('Products List', '/inventory/products', (data) => Array.isArray(data));
+            await testAPI('Customers List', '/customers', (data) => Array.isArray(data));
+            await testAPI('Expenses List', '/expenses', (data) => Array.isArray(data));
+            await testAPI('Orders List', '/orders', (data) => Array.isArray(data));
+            await testAPI('Invoices List', '/invoices', (data) => Array.isArray(data));
+            await testAPI('Accounting Overview', '/accounting/overview');
+            await testAPI('Journal Entries', '/accounting/journal-entries', (data) => Array.isArray(data));
+            await testAPI('Chart of Accounts', '/accounting/chart-of-accounts', (data) => Array.isArray(data));
+            await testAPI('Trial Balance', '/accounting/trial-balance', (data) => Array.isArray(data));
+            await testAPI('Balance Sheet', '/accounting/balance-sheet');
+            await testAPI('Profit & Loss', '/accounting/profit-loss');
+            await testAPI('Warehouses List', '/warehouses', (data) => Array.isArray(data));
+            await testAPI('Suppliers List', '/suppliers', (data) => Array.isArray(data));
+            await testAPI('Purchase Orders', '/purchase-orders', (data) => Array.isArray(data));
+            await testAPI('Categories List', '/categories', (data) => Array.isArray(data));
+            await testAPI('System Preferences', '/system-preferences');
+            await testAPI('Users List', '/users', (data) => Array.isArray(data));
+
+            // Create final summary
+            const summaryDiv = document.createElement('div');
+            summaryDiv.className = 'test-result ' + (failedCount > 0 ? 'warning' : 'success');
+            summaryDiv.innerHTML = `
+                <h3>🎯 Test Summary</h3>
+                <p>✅ Passed: ${passedCount}</p>
+                <p>❌ Failed: ${failedCount}</p>
+                <p>📊 Total: ${passedCount + failedCount}</p>
+                <p>🎯 Success Rate: ${Math.round((passedCount / (passedCount + failedCount)) * 100)}%</p>
+            `;
+            document.getElementById('results').appendChild(summaryDiv);
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+            testResults = [];
+            passedCount = 0;
+            failedCount = 0;
+            updateStats();
+        }
+
+        function exportResults() {
+            const report = {
+                timestamp: new Date().toISOString(),
+                summary: {
+                    passed: passedCount,
+                    failed: failedCount,
+                    total: passedCount + failedCount,
+                    successRate: Math.round((passedCount / (passedCount + failedCount)) * 100)
+                },
+                tests: testResults
+            };
+
+            const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'frontend-backend-test-report.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Auto-run tests when page loads
+        window.addEventListener('load', () => {
+            setTimeout(runAllTests, 1000);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,62 @@
+Here's your **final copy-paste-ready Replit prompt** to build the **System Preferences module** (with category management embedded), tailored for your chemicals ERP system:
+
+---
+
+### ✅ 🔧 Replit Prompt for ERP System Preferences
+
+> “Add a **System Preferences module** to my ERP system for a chemical trading company. Use **React (frontend)**, **FastAPI (backend)**, and **PostgreSQL** (database). Make this module accessible only to admins using **JWT authentication**.
+>
+> ### The System Preferences panel should allow:
+> 1. **User Management**
+>     - Create, edit, and deactivate users
+>     - Assign roles: Admin, Sales Rep, Inventory Manager
+>     - Role-based access control
+>
+> 2. **Inventory Settings**
+>     - Global low stock alert thresholds
+>     - Default units (kg, liter, etc.)
+>     - Toggle batch tracking and expiry alerts
+>     - Barcode generation toggle
+>
+> 3. **Financial Settings**
+>     - Set default currency
+>     - Define VAT/Tax percentage
+>     - Enable/disable partial invoice payments
+>     - Payment terms: 30, 60 days, etc.
+>     - Toggle auto stock deduction on invoice payment
+>
+> 4. **Category Management** *(inside Preferences)*
+>     - Add/Edit/Delete product categories (name + optional description)
+>     - Used in both Inventory and Sales modules
+>
+> 5. **System Access Control**
+>     - Set session timeouts
+>     - Toggle system-wide maintenance mode
+>     - Enable login logs / access control
+>
+> 6. **Notifications & Alerts**
+>     - Low stock alerts
+>     - Expiry alerts (X days before expiry)
+>     - Critical error/admin notification preferences
+>
+> 7. **Company Branding & Info**
+>     - Upload company logo
+>     - Company name, address, contact info
+>     - Custom invoice header/footer messages
+>
+> ### UI Requirements:
+> - Create a “System Preferences” tab in the admin sidebar
+> - Group settings by tabs or collapsible sections (Users, Financials, Inventory, Branding)
+> - Use React with forms and controlled inputs to update preferences
+> - Use Axios to send data to backend
+>
+> ### Backend Requirements:
+> - Create endpoints for retrieving and updating preferences
+> - Store preferences in a PostgreSQL table with schema:
+>     - key: string
+>     - value: JSON or string
+> - Protect all routes with JWT-based admin authentication
+
+---
+
+You can paste this prompt into Replit or share it with a developer to get started instantly. Want the actual **React and FastAPI code** to go with it? I can generate that for you too — just let me know!

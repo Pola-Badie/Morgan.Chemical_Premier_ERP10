@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: premier-erp-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: premier_erp
+      POSTGRES_USER: erp_user
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-erp_secure_password}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backups:/backups
+    ports:
+      - "5432:5432"
+    networks:
+      - erp-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U erp_user -d premier_erp"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # Premier ERP Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.production
+    container_name: premier-erp-app
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    environment:
+      NODE_ENV: production
+      DATABASE_URL= 'postgresql://neondb_owner:npg_RgYqcf8Q4vVo@ep-solitary-bar-adggyh8w-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require'
+: postgresql://erp_user:${POSTGRES_PASSWORD:-erp_secure_password}@postgres:5432/premier_erp
+      PORT: 5000
+    ports:
+      - "5000:5000"
+    networks:
+      - erp-network
+
+  # Redis for session management (optional)
+  redis:
+    image: redis:7-alpine
+    container_name: premier-erp-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - erp-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  erp-network:
+    driver: bridge

@@ -1,0 +1,108 @@
+ => ERROR [frontend-builder 12/12] RUN npm run build                                                                                               15.0s
+------
+ > [frontend-builder 12/12] RUN npm run build:
+1.018 
+1.018 > rest-express@1.0.0 build
+1.018 > vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+1.018 
+1.511 vite v5.4.14 building for production...
+2.420 transforming...
+2.573 Browserslist: browsers data (caniuse-lite) is 8 months old. Please run:
+2.573   npx update-browserslist-db@latest
+2.573   Why you should do it regularly: https://github.com/browserslist/update-db#readme
+6.921 [plugin:vite:esbuild] [plugin vite:esbuild] client/src/contexts/LanguageContext.tsx: Duplicate key "inventory" in object literal
+6.921 82 |      allWarehouses: 'all warehouses',
+6.921 83 |      viewingInventoryFor: 'Viewing inventory for',
+6.921 84 |      inventory: 'Inventory',
+6.921    |      ^
+6.921 85 |      categories: 'Categories',
+6.921 86 |      searchInventory: 'Search inventory...',
+6.921 
+6.924 [plugin:vite:esbuild] [plugin vite:esbuild] client/src/contexts/LanguageContext.tsx: Duplicate key "editWarehouse" in object literal
+6.924 140|      
+6.924 141|      // Warehouse Dialogs
+6.924 142|      editWarehouse: 'Edit Warehouse',
+6.924    |      ^
+6.924 143|      addNewWarehouse: 'Add New Warehouse',
+6.924 144|      updateWarehouseDetails: 'Update the details for this warehouse',
+6.924 
+6.925 [plugin:vite:esbuild] [plugin vite:esbuild] client/src/contexts/LanguageContext.tsx: Duplicate key "location" in object literal
+6.925 145|      enterWarehouseDetails: 'Enter the details for the new warehouse',
+6.925 146|      name: 'Name',
+6.925 147|      location: 'Location',
+6.925    |      ^
+6.925 148|      warehouseNamePlaceholder: 'Warehouse name',
+6.925 149|      warehouseLocationPlaceholder: 'Warehouse location',
+6.925 
+6.932 [plugin:vite:esbuild] [plugin vite:esbuild] client/src/contexts/LanguageContext.tsx: Duplicate key "addWarehouse" in object literal
+6.932 153|      warehouseAddedSuccess: 'The new warehouse has been added successfully.',
+6.932 154|      saveChanges: 'Save Changes',
+6.932 155|      addWarehouse: 'Add Warehouse',
+6.932    |      ^
+6.932 156|      transferProductToWarehouse: 'Transfer Product to Another Warehouse',
+6.932 157|      transferStockDescription: 'Transfer stock from the current warehouse to a different warehouse location',
+6.932 
+6.932 [plugin:vite:esbuild] [plugin vite:esbuild] client/src/contexts/LanguageContext.tsx: Duplicate key "product" in object literal
+6.932 157|      transferStockDescription: 'Transfer stock from the current warehouse to a different warehouse location',
+6.932 158|      productDetails: 'Product Details',
+6.932 159|      product: 'Product',
+6.932    |      ^
+6.932 160|      currentStock: 'Current Stock',
+6.932 161|      currentWarehouse: 'Current Warehouse',
+6.932 
+6.937 [plugin:vite:esbuild] [plugin vite:esbuild] client/src/contexts/LanguageContext.tsx: Duplicate key "inventory" in object literal
+6.937 347|      allWarehouses: 'جميع المستودعات',
+6.937 348|      viewingInventoryFor: 'عرض المخزون لـ',
+6.937 349|      inventory: 'المخزون',
+6.937    |      ^
+6.937 350|      categories: 'الفئات',
+6.937 351|      searchInventory: 'البحث في المخزون...',
+6.937 
+6.943 [plugin:vite:esbuild] [plugin vite:esbuild] client/src/contexts/LanguageContext.tsx: Duplicate key "editWarehouse" in object literal
+6.943 420|      
+6.943 421|      // Warehouse Dialogs
+6.943 422|      editWarehouse: 'تعديل المستودع',
+6.943    |      ^
+6.943 423|      addNewWarehouse: 'إضافة مستودع جديد',
+6.943 424|      updateWarehouseDetails: 'تحديث تفاصيل هذا المستودع',
+6.943 
+6.945 [plugin:vite:esbuild] [plugin vite:esbuild] client/src/contexts/LanguageContext.tsx: Duplicate key "location" in object literal
+6.945 425|      enterWarehouseDetails: 'أدخل تفاصيل المستودع الجديد',
+6.945 426|      name: 'الاسم',
+6.945 427|      location: 'الموقع',
+6.945    |      ^
+6.945 428|      warehouseNamePlaceholder: 'اسم المستودع',
+6.945 429|      warehouseLocationPlaceholder: 'موقع المستودع',
+6.945 
+6.946 [plugin:vite:esbuild] [plugin vite:esbuild] client/src/contexts/LanguageContext.tsx: Duplicate key "addWarehouse" in object literal
+6.946 433|      warehouseAddedSuccess: 'تم إضافة المستودع الجديد بنجاح.',
+6.946 434|      saveChanges: 'حفظ التغييرات',
+6.946 435|      addWarehouse: 'إضافة مستودع',
+6.946    |      ^
+6.946 436|      transferProductToWarehouse: 'نقل المنتج إلى مستودع آخر',
+6.946 437|      transferStockDescription: 'نقل المخزون من المستودع الحالي إلى موقع مستودع مختلف',
+6.946 
+6.950 [plugin:vite:esbuild] [plugin vite:esbuild] client/src/contexts/LanguageContext.tsx: Duplicate key "product" in object literal
+6.950 437|      transferStockDescription: 'نقل المخزون من المستودع الحالي إلى موقع مستودع مختلف',
+6.950 438|      productDetails: 'تفاصيل المنتج',
+6.950 439|      product: 'المنتج',
+6.950    |      ^
+6.950 440|      currentStock: 'المخزون الحالي',
+6.950 441|      currentWarehouse: 'المستودع الحالي',
+6.950 
+14.85 ✓ 1690 modules transformed.
+14.85 x Build failed in 12.48s
+14.85 error during build:
+14.85 [vite:asset] Could not load /app/attached_assets/hazard_0_0.png (imported by client/src/pages/LabelGenerator.tsx): ENOENT: no such file or directory, open '/app/attached_assets/hazard_0_0.png'
+14.85 Error: Could not load /app/attached_assets/hazard_0_0.png (imported by client/src/pages/LabelGenerator.tsx): ENOENT: no such file or directory, open '/app/attached_assets/hazard_0_0.png'
+------
+Dockerfile:23
+--------------------
+  21 |     
+  22 |     # Build frontend
+  23 | >>> RUN npm run build
+  24 |     
+  25 |     # Stage 2: Build backend and final image
+--------------------
+ERROR: failed to solve: process "/bin/sh -c npm run build" did not complete successfully: exit code: 1
+ERROR: Service 'app' failed to build : Build failed

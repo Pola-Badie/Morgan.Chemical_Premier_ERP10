@@ -1,0 +1,47 @@
+MODIFY EXISTING PRODUCT DATA - MAKE EACH WAREHOUSE DIFFERENT
+
+Do NOT add new code. Just UPDATE the existing products in the database to have different inventory levels and items per warehouse.
+
+UPDATE products table with these changes:
+
+WAREHOUSE 1 (Giza):
+UPDATE products SET location = 'Warehouse 1', currentStock = 25 WHERE name = 'Panadol Advance';
+UPDATE products SET location = 'Warehouse 1', currentStock = 0 WHERE name = 'Cataflam 500 mg';
+UPDATE products SET location = 'Warehouse 1', currentStock = 45 WHERE name = 'Aspirin';
+DELETE FROM products WHERE name = 'Spasmodigestin' AND location = 'Warehouse 1';
+DELETE FROM products WHERE name = 'Gulvas Met' AND location = 'Warehouse 1';
+
+WAREHOUSE 2 (Alexandria):
+UPDATE products SET location = 'Warehouse 2', currentStock = 8, expiryDate = '2025-01-15' WHERE name = 'Panadol Advance';
+UPDATE products SET location = 'Warehouse 2', currentStock = 35 WHERE name = 'Cataflam 500 mg';
+UPDATE products SET location = 'Warehouse 2', currentStock = 0 WHERE name = 'Aspirin';
+UPDATE products SET location = 'Warehouse 2', currentStock = 5 WHERE name = 'Spasmodigestin';
+DELETE FROM products WHERE name = 'Gulvas Met' AND location = 'Warehouse 2';
+
+WAREHOUSE 3 (Current one):
+Keep existing data as is.
+
+ADD NEW PRODUCTS for different warehouses:
+
+INSERT INTO products (name, drugName, category, currentStock, reorderPoint, unit, costPrice, sellingPrice, supplier, description, expiryDate, batchNumber, location) VALUES
+('Amoxicillin 500mg', 'Amoxicillin', 'Antibiotics', 0, 20, 'bottles', 18.50, 25.00, 'PharmaCorp', 'Antibiotic capsules', '2025-06-15', 'BATCH-A100-25', 'Warehouse 1'),
+('Vitamin D3', 'Cholecalciferol', 'Vitamins', 150, 30, 'bottles', 12.99, 18.00, 'VitaCorp', 'Bone health supplement', '2025-12-31', 'BATCH-V300-25', 'Warehouse 1'),
+
+('Insulin Pens', 'Insulin', 'Diabetes', 2, 15, 'pens', 45.00, 65.00, 'DiabCorp', 'Diabetes treatment', '2025-03-10', 'BATCH-I200-25', 'Warehouse 2'),
+('Omeprazole 20mg', 'Omeprazole', 'Gastric', 75, 25, 'capsules', 8.75, 12.50, 'GastroCorp', 'Acid reducer', '2025-08-20', 'BATCH-O400-25', 'Warehouse 2'),
+
+('Metformin 500mg', 'Metformin', 'Diabetes', 0, 40, 'tablets', 6.50, 9.99, 'DiabCorp', 'Blood sugar control', '2025-07-30', 'BATCH-M500-25', 'Warehouse 3'),
+('Losartan 50mg', 'Losartan', 'Cardiovascular', 5, 35, 'tablets', 15.25, 22.00, 'CardioCorp', 'Blood pressure medication', '2025-01-25', 'BATCH-L600-25', 'Warehouse 3');
+
+This will create:
+- Warehouse 1: Different stock levels, some out of stock items, some products removed
+- Warehouse 2: Different expiry dates, different stock quantities, different product mix
+- Warehouse 3: Keep current setup but add new products with different statuses
+
+Now when you switch between warehouses, you'll see:
+- Different product lists
+- Different stock levels (some low, some out of stock)
+- Different expiry statuses
+- Different total counts
+
+This way you can test if warehouse switching actually filters the data or just changes the name.

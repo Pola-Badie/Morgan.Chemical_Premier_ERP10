@@ -1,0 +1,63 @@
+You are a repo-fixing agent. Goal: resolve the runtime error
+
+  SyntaxError: The requested module './routes-accounting.js' does not provide an export named 'default'
+
+without refactoring business logic. Do ONLY the edits below and then re-run.
+
+===============================================================================
+1) ADD A DEFAULT EXPORT IN routes-accounting
+===============================================================================
+Target file (pick the one that exists):
+- server/routes-accounting.js
+- OR server/routes-accounting.ts
+
+Open the file and locate the router variable. It is usually named either
+`accountingRoutes` or `router`.
+
+A) If the file uses ESM (has `import ... from` and `export ...`):
+   - KEEP all existing named exports.
+   - At the VERY END of the file, add EXACTLY ONE of these lines, depending on
+     the router variable name:
+
+   If the router variable is `accountingRoutes`:
+   --------------------------------------------
+   export default accountingRoutes;
+
+   If the router variable is `router`:
+   -----------------------------------
+   export default router;
+
+   (Do NOT remove `export { accountingRoutes }` or `export const accountingRoutes = ...`;
+    we are just adding a default export to satisfy the importer.)
+
+B) If the file uses CommonJS (has `module.exports` / `require()`):
+   - Ensure it ends with:
+     module.exports = accountingRoutes;
+   - If the variable name is `router`, then:
+     module.exports = router;
+
+===============================================================================
+2) DO NOT CHANGE THE IMPORTER
+===============================================================================
+Keep the import line in server/index.production.ts exactly as:
+import accountingRoutes from './routes-accounting.js';
+
+===============================================================================
+3) QUICK VERIFY: PORT BIND (no change if already correct)
+===============================================================================
+In the file that calls app.listen (server/index.production.ts or similar),
+ensure it uses the Railway port. If it already does, skip this.
+
+const port = Number(process.env.PORT) || 3000;
+app.listen(port, () => console.log(`ERP running on ${port}`));
+
+===============================================================================
+4) REDEPLOY
+===============================================================================
+- Commit the change.
+- Push to GitHub.
+- In Railway → Deploy → Redeploy (or enable Auto-Deploy).
+- Watch Logs; the previous "does not provide an export named 'default'" error
+  must disappear.
+
+END.

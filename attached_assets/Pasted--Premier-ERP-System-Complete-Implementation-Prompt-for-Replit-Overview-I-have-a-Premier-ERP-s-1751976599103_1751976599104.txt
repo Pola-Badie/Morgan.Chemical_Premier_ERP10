@@ -1,0 +1,261 @@
+# Premier ERP System - Complete Implementation Prompt for Replit
+
+## Overview
+I have a Premier ERP system with a complete backend but missing frontend pages. The navigation routes exist but the actual page components need to be implemented with proper data fetching and CRUD operations.
+
+## What I Need You to Create:
+
+### 1. Missing Page Components
+Create all these pages in `client/src/pages/` with full functionality:
+
+#### **Dashboard.tsx**
+- Overview cards showing total products, customers, suppliers, orders
+- Low stock alerts table
+- Recent orders table  
+- Monthly revenue chart using Recharts
+- Real-time data fetching from `/api/dashboard/summary`
+
+#### **Inventory.tsx**
+- Products table with pagination
+- Add/Edit/Delete product functionality
+- Category filtering
+- Stock level indicators (low stock highlighting)
+- Search functionality
+- Modal forms for product creation/editing
+- Connect to `/api/products` endpoints
+
+#### **OrderManagement.tsx**
+- Sales orders management
+- Order status tracking (pending, approved, completed)
+- Customer selection dropdown
+- Order items management
+- Print order functionality
+- Connect to sales orders API
+
+#### **Procurement.tsx**
+- Purchase orders management
+- Supplier selection
+- Purchase order creation workflow
+- Approval workflow
+- Receiving goods functionality
+- Connect to purchase orders API
+
+#### **Suppliers.tsx**
+- Suppliers list with CRUD operations
+- Contact information management
+- Payment terms tracking
+- Supplier performance metrics
+- Modal forms for supplier management
+- Connect to `/api/suppliers`
+
+#### **Accounting.tsx**
+- Chart of accounts management
+- Journal entries
+- Account balances
+- Financial reports (P&L, Balance Sheet)
+- Connect to accounting API endpoints
+
+#### **CreateInvoice.tsx**
+- Invoice creation form
+- Customer selection
+- Line items management
+- Tax calculations
+- PDF generation capability
+- Save as draft/finalize options
+- Connect to `/api/invoices`
+
+#### **CreateQuotation.tsx**
+- Quotation creation form
+- Similar to invoice but for quotes
+- Validity period setting
+- Convert to invoice functionality
+- Connect to `/api/quotations`
+
+#### **InvoiceHistory.tsx**
+- List all invoices with filters
+- Status filtering (draft, sent, paid)
+- Search by customer/invoice number
+- Action buttons (view, edit, print, email)
+- Connect to invoice API
+
+#### **QuotationHistory.tsx**
+- List all quotations
+- Status management
+- Convert to invoice functionality
+- Print/email capabilities
+- Connect to quotation API
+
+#### **Expenses.tsx**
+- Expense tracking table
+- Add expense form with file upload
+- Category management
+- Receipt management
+- Expense reports
+- Connect to `/api/expenses`
+
+#### **ReportsNew.tsx**
+- Multiple report types
+- Date range selectors
+- Export functionality (PDF, Excel)
+- Charts and visualizations
+- Financial and operational reports
+
+### 2. Required Components
+
+#### **Layout Components:**
+```typescript
+// MainLayoutEnhanced.tsx - Sidebar navigation with user menu
+// Include navigation items for all pages
+// User profile dropdown
+// Notification bell
+// Theme switcher
+```
+
+#### **UI Components (using shadcn/ui):**
+- DataTable with pagination, sorting, filtering
+- Modal dialogs for forms
+- Form components with validation
+- Loading states and error handling
+- Toast notifications
+- Confirmation dialogs
+
+#### **Context Providers:**
+```typescript
+// NotificationContext - Toast notifications
+// PaginationContext - Table pagination state
+// CSVContext - Export functionality  
+// LanguageContext - Multi-language support
+// SidebarContext - Navigation state
+```
+
+### 3. Key Features to Implement:
+
+#### **Data Fetching:**
+- Use React Query (@tanstack/react-query) for all API calls
+- Proper loading states and error handling
+- Optimistic updates where appropriate
+- Cache invalidation on mutations
+
+#### **Forms:**
+- React Hook Form with Zod validation
+- Proper error messages
+- Loading states during submission
+- Success feedback
+
+#### **Tables:**
+- Sortable columns
+- Pagination controls
+- Search/filter functionality
+- Row actions (edit, delete, view)
+- Bulk operations where needed
+
+#### **Navigation:**
+- Active page highlighting
+- Breadcrumbs
+- Sidebar collapsible
+- Mobile responsive menu
+
+### 4. Authentication Flow:
+```typescript
+// Login.tsx - Login form with username/password
+// Redirect to dashboard after successful login
+// Store user data in state
+// Protect all routes with authentication
+```
+
+### 5. API Integration Pattern:
+```typescript
+// Example for products page:
+const { data: products, isLoading, error } = useQuery({
+  queryKey: ['products', page, limit],
+  queryFn: () => fetch(`/api/products?page=${page}&limit=${limit}`)
+    .then(res => res.json())
+});
+
+const createProductMutation = useMutation({
+  mutationFn: (productData) => 
+    fetch('/api/products', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(productData)
+    }),
+  onSuccess: () => {
+    queryClient.invalidateQueries(['products']);
+    toast.success('Product created successfully');
+  }
+});
+```
+
+### 6. Styling Requirements:
+- Use Tailwind CSS classes consistently
+- Implement dark/light theme support
+- Responsive design (mobile-first)
+- Professional business application styling
+- Use shadcn/ui components for consistency
+
+### 7. File Structure:
+```
+client/src/
+├── pages/
+│   ├── Dashboard.tsx
+│   ├── Inventory.tsx
+│   ├── OrderManagement.tsx
+│   ├── Procurement.tsx
+│   ├── Suppliers.tsx
+│   ├── Accounting.tsx
+│   ├── CreateInvoice.tsx
+│   ├── CreateQuotation.tsx
+│   ├── InvoiceHistory.tsx
+│   ├── QuotationHistory.tsx
+│   ├── Expenses.tsx
+│   ├── ReportsNew.tsx
+│   └── Login.tsx
+├── components/
+│   ├── layout/
+│   │   └── MainLayoutEnhanced.tsx
+│   ├── ui/ (shadcn components)
+│   └── forms/
+├── contexts/
+├── hooks/
+└── lib/
+```
+
+### 8. Priority Order:
+1. **Login.tsx** - Authentication working
+2. **MainLayoutEnhanced.tsx** - Navigation structure
+3. **Dashboard.tsx** - Landing page with overview
+4. **Inventory.tsx** - Core product management
+5. **Suppliers.tsx** - Supplier management  
+6. **CreateInvoice.tsx** - Invoice creation
+7. **InvoiceHistory.tsx** - Invoice management
+8. **Expenses.tsx** - Expense tracking
+9. **OrderManagement.tsx** - Sales orders
+10. **Procurement.tsx** - Purchase orders
+11. **Accounting.tsx** - Financial management
+12. **ReportsNew.tsx** - Reporting system
+
+### 9. Testing Approach:
+- Test each page with the existing backend API
+- Verify CRUD operations work correctly
+- Check navigation between pages
+- Test form validation and error handling
+- Ensure responsive design works
+
+### 10. Additional Requirements:
+- Include proper TypeScript types for all data
+- Implement proper error boundaries
+- Add loading skeletons for better UX
+- Include keyboard navigation support
+- Add proper ARIA labels for accessibility
+
+## Expected Outcome:
+A fully functional ERP system where:
+- All navigation links work and lead to functional pages
+- Users can perform all CRUD operations
+- Data flows correctly between frontend and backend
+- Professional, polished user interface
+- Responsive design that works on all devices
+- Proper error handling and user feedback
+
+## Note:
+The backend API is already complete and working. Focus on creating the frontend pages that properly consume these APIs and provide a seamless user experience for managing a chemical manufacturing business.

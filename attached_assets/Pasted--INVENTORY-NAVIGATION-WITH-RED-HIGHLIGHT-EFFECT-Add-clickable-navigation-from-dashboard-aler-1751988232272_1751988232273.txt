@@ -1,0 +1,380 @@
+# 🎯 INVENTORY NAVIGATION WITH RED HIGHLIGHT EFFECT
+
+## Add clickable navigation from dashboard alerts to inventory with highlight effect
+
+### 1. UPDATE Dashboard Alert Cards (in Dashboard.tsx)
+
+```typescript
+// Update your low stock and expiring product cards with navigation:
+
+const Dashboard = () => {
+  const navigate = useNavigate();
+
+  // Function to navigate to inventory with highlight
+  const navigateToProduct = (productId, productName) => {
+    // Navigate to inventory page with product ID and highlight flag
+    navigate(`/inventory?highlight=${productId}&product=${encodeURIComponent(productName)}`);
+  };
+
+  // In your Low Stock Card component:
+  <Card>
+    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+      <CardTitle className="text-sm font-medium flex items-center gap-2">
+        <Package className="h-4 w-4 text-red-600" />
+        Low Stock Alert
+      </CardTitle>
+      <div className="flex gap-2">
+        <Badge variant="destructive">{inventorySummary?.outOfStockCount || 0} Out</Badge>
+        <Badge variant="secondary">{inventorySummary?.lowStockCount || 0} Low</Badge>
+      </div>
+    </CardHeader>
+    <CardContent>
+      {!lowStock?.length ? (
+        <div className="text-center py-8 text-gray-500">
+          <Package className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+          <p>All products are well stocked!</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {lowStock.slice(0, 5).map((product) => (
+            <div 
+              key={product.id} 
+              className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 cursor-pointer transition-all duration-200 hover:shadow-md"
+              onClick={() => navigateToProduct(product.id, product.name)}
+            >
+              <div className="flex items-center gap-3">
+                {product.stockStatus === 'out_of_stock' ? 
+                  <XCircle className="h-4 w-4 text-red-600" /> : 
+                  <AlertTriangle className="h-4 w-4 text-orange-600" />
+                }
+                <div>
+                  <p className="font-medium text-sm">{product.name}</p>
+                  <p className="text-xs text-gray-500">{product.categoryName}</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <Badge className={getStockStatusColor(product.stockStatus)}>
+                  {product.currentStock} {product.unitOfMeasure}
+                </Badge>
+                <p className="text-xs text-gray-500 mt-1">
+                  Reorder: {product.reorderPoint}
+                </p>
+              </div>
+            </div>
+          ))}
+          {lowStock.length > 5 && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="w-full"
+              onClick={() => navigate('/inventory?tab=low-stock')}
+            >
+              View All {lowStock.length} Low Stock Items
+            </Button>
+          )}
+        </div>
+      )}
+    </CardContent>
+  </Card>
+
+  // In your Expiring Products Card component:
+  <Card>
+    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+      <CardTitle className="text-sm font-medium flex items-center gap-2">
+        <AlertTriangle className="h-4 w-4 text-orange-600" />
+        Expiring Products
+      </CardTitle>
+      <div className="flex gap-2">
+        <Badge variant="destructive">{inventorySummary?.expiredCount || 0} Expired</Badge>
+        <Badge variant="secondary">{inventorySummary?.expiringCount || 0} Expiring</Badge>
+      </div>
+    </CardHeader>
+    <CardContent>
+      {!expiring?.length ? (
+        <div className="text-center py-8 text-gray-500">
+          <AlertTriangle className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+          <p>No products expiring soon!</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {expiring.slice(0, 5).map((product) => (
+            <div 
+              key={product.id} 
+              className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 cursor-pointer transition-all duration-200 hover:shadow-md"
+              onClick={() => navigateToProduct(product.id, product.name)}
+            >
+              <div className="flex items-center gap-3">
+                <AlertTriangle className="h-4 w-4 text-orange-600" />
+                <div>
+                  <p className="font-medium text-sm">{product.name}</p>
+                  <p className="text-xs text-gray-500">Batch: {product.batchNumber || 'N/A'}</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <Badge className={getExpiryStatusColor(product.expiryStatus)}>
+                  {product.daysUntilExpiry < 0 ? 'Expired' : `${product.daysUntilExpiry}d left`}
+                </Badge>
+                <p className="text-xs text-gray-500 mt-1">
+                  {new Date(product.expiryDate).toLocaleDateString()}
+                </p>
+              </div>
+            </div>
+          ))}
+          {expiring.length > 5 && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="w-full"
+              onClick={() => navigate('/inventory?tab=expiring')}
+            >
+              View All {expiring.length} Expiring Items
+            </Button>
+          )}
+        </div>
+      )}
+    </CardContent>
+  </Card>
+```
+
+### 2. UPDATE Inventory Page with Highlight Effect (Inventory.tsx)
+
+```typescript
+// Update your Inventory.tsx component:
+
+import React, { useState, useEffect } from 'react';
+import { useLocation, useSearchParams } from 'react-router-dom';
+
+const Inventory = () => {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showAddProduct, setShowAddProduct] = useState(false);
+  const [editingProduct, setEditingProduct] = useState(null);
+  const [highlightedProductId, setHighlightedProductId] = useState(null);
+  const [searchParams] = useSearchParams();
+  const location = useLocation();
+  const queryClient = useQueryClient();
+
+  // Check for highlight parameter when component mounts
+  useEffect(() => {
+    const highlightId = searchParams.get('highlight');
+    const productName = searchParams.get('product');
+    
+    if (highlightId) {
+      setHighlightedProductId(parseInt(highlightId));
+      
+      // If product name is provided, set it as search term to filter
+      if (productName) {
+        setSearchTerm(decodeURIComponent(productName));
+      }
+      
+      // Remove highlight after 3 seconds
+      setTimeout(() => {
+        setHighlightedProductId(null);
+      }, 3000);
+      
+      // Scroll to the highlighted product after a short delay
+      setTimeout(() => {
+        const element = document.getElementById(`product-${highlightId}`);
+        if (element) {
+          element.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'center' 
+          });
+        }
+      }, 500);
+    }
+  }, [searchParams]);
+
+  // Rest of your existing code...
+
+  // Update your product table row to include highlight effect:
+  const getRowClassName = (product) => {
+    const baseClasses = "hover:bg-gray-50 transition-all duration-300";
+    const stockStatus = getStockStatus(product);
+    
+    if (highlightedProductId === product.id) {
+      return `${baseClasses} bg-red-100 border-2 border-red-300 animate-pulse shadow-lg`;
+    }
+    
+    // Add subtle background colors based on stock status
+    if (stockStatus.status === 'Out of Stock') {
+      return `${baseClasses} bg-red-50 border-l-4 border-red-500`;
+    } else if (stockStatus.status === 'Critical') {
+      return `${baseClasses} bg-orange-50 border-l-4 border-orange-500`;
+    } else if (stockStatus.status === 'Low Stock') {
+      return `${baseClasses} bg-yellow-50 border-l-4 border-yellow-500`;
+    }
+    
+    return baseClasses;
+  };
+
+  // In your table body, update the row:
+  <tbody className="divide-y divide-gray-200">
+    {filteredProducts.map((product) => {
+      const stockStatus = getStockStatus(product);
+      return (
+        <tr 
+          key={product.id} 
+          id={`product-${product.id}`} // Add ID for scrolling
+          className={getRowClassName(product)}
+        >
+          <td className="px-6 py-4">
+            <div>
+              <p className="font-medium flex items-center gap-2">
+                {product.name}
+                {highlightedProductId === product.id && (
+                  <span className="text-red-600 animate-bounce">📍</span>
+                )}
+              </p>
+              <p className="text-sm text-gray-500">{product.description}</p>
+            </div>
+          </td>
+          <td className="px-6 py-4 text-sm">{product.categoryName}</td>
+          <td className="px-6 py-4">
+            <div className="flex items-center gap-2">
+              <p className="font-medium">{product.currentStock} {product.unitOfMeasure}</p>
+              {highlightedProductId === product.id && stockStatus.status !== 'In Stock' && (
+                <AlertTriangle className="h-4 w-4 text-red-600 animate-pulse" />
+              )}
+            </div>
+            <p className="text-xs text-gray-500">Reorder: {product.reorderPoint}</p>
+          </td>
+          <td className="px-6 py-4 text-sm">${product.unitPrice}</td>
+          <td className="px-6 py-4">
+            <Badge 
+              className={`${stockStatus.color} ${
+                highlightedProductId === product.id ? 'animate-pulse ring-2 ring-red-400' : ''
+              }`}
+            >
+              {stockStatus.status}
+            </Badge>
+          </td>
+          <td className="px-6 py-4">
+            <div className="flex space-x-2">
+              <Button 
+                size="sm" 
+                variant="outline"
+                onClick={() => {
+                  setEditingProduct(product);
+                  form.reset(product);
+                }}
+                className={highlightedProductId === product.id ? 'ring-2 ring-red-400' : ''}
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
+              <Button 
+                size="sm" 
+                variant="outline"
+                onClick={() => deleteProductMutation.mutate(product.id)}
+              >
+                <Trash className="h-4 w-4" />
+              </Button>
+            </div>
+          </td>
+        </tr>
+      );
+    })}
+  </tbody>
+```
+
+### 3. ADD Custom CSS Animation (in your index.css)
+
+```css
+/* Add these animations to your index.css file: */
+
+@keyframes highlightFade {
+  0% {
+    background-color: rgba(239, 68, 68, 0.3);
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.5);
+  }
+  50% {
+    background-color: rgba(239, 68, 68, 0.2);
+    box-shadow: 0 0 15px rgba(239, 68, 68, 0.3);
+  }
+  100% {
+    background-color: rgba(239, 68, 68, 0.1);
+    box-shadow: 0 0 5px rgba(239, 68, 68, 0.1);
+  }
+}
+
+.highlight-product {
+  animation: highlightFade 3s ease-in-out;
+}
+
+/* Enhanced hover effects for alert cards */
+.alert-card-item {
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.alert-card-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-color: #3b82f6;
+}
+
+/* Pulse animation for highlighted items */
+.highlight-pulse {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+```
+
+### 4. ADD Toast Notification (Optional)
+
+```typescript
+// Add this to show a toast when navigating from dashboard
+useEffect(() => {
+  const highlightId = searchParams.get('highlight');
+  const productName = searchParams.get('product');
+  
+  if (highlightId && productName) {
+    // Show toast notification
+    toast({
+      title: "Product Located",
+      description: `Found ${decodeURIComponent(productName)} in inventory`,
+      duration: 3000,
+    });
+  }
+}, [searchParams]);
+```
+
+## 🎯 COPY THIS PROMPT TO REPLIT:
+
+```
+Add Navigation with Red Highlight Effect from Dashboard to Inventory
+
+I want to click on dashboard alert items (low stock, expiring products) and:
+
+1. Navigate to the inventory page
+2. Highlight the specific product with a red faded effect for 3 seconds
+3. Scroll to the product automatically
+4. Show visual indicators (pulse, border, background)
+
+Features needed:
+- Clickable alert items in dashboard cards
+- URL parameters to pass product ID and name
+- Red highlight animation that fades after 3 seconds
+- Automatic scrolling to the highlighted product
+- Visual enhancements (borders, icons, animations)
+- Toast notification when product is found
+
+Use the code provided to implement this complete navigation and highlight system.
+```
+
+## ✅ WHAT THIS DOES:
+
+1. **Click Alert Item** → Navigates to `/inventory?highlight=123&product=ProductName`
+2. **Red Highlight** → Product row gets red background with pulse effect
+3. **Auto Scroll** → Page scrolls to the highlighted product
+4. **Fade Effect** → Highlight disappears after 3 seconds
+5. **Visual Cues** → Icons, borders, and animations for better UX
+
+This creates a smooth, professional navigation experience! 🎯✨

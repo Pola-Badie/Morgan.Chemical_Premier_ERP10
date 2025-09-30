@@ -1,0 +1,11 @@
+name,drugName,sku,costPrice,sellingPrice,quantity,unitOfMeasure,location,description,lowStockThreshold,status,categoryId,productType,expiryDate
+Aspirin 500mg Tablets,Acetylsalicylic Acid,ASP-500-001,15.50,35.00,1000,Tablets,Main Warehouse,"Pain relief medication for headaches and fever",50,active,1,finished,2025-12-31
+Amoxicillin 250mg Capsules,Amoxicillin Trihydrate,AMOX-250-002,8.75,22.50,500,Capsules,Temperature-Controlled Storage,"Antibiotic for bacterial infections",25,active,1,finished,2025-10-15
+Paracetamol Syrup 100ml,Paracetamol,PARA-SYR-003,12.00,28.00,200,Bottles,Medical Supplies Warehouse,"Children's fever and pain relief syrup",20,active,1,finished,2026-03-20
+Raw Material Alpha,Chemical Alpha,RAW-ALPHA-004,45.00,0.00,2000,KG,Raw Materials Section,"Raw chemical for pharmaceutical manufacturing",100,active,2,raw,
+Packaging Boxes Small,N/A,PKG-BOX-S-005,2.50,0.00,5000,PCS,Packaging,"Small packaging boxes for tablets",200,active,3,packaging,
+Insulin Injection 10ml,Human Insulin,INS-10ML-006,85.00,180.00,150,Vials,Temperature-Controlled Storage,"Diabetes medication requiring refrigeration",10,active,1,finished,2025-09-30
+Vitamin C 1000mg,Ascorbic Acid,VIT-C-1000-007,6.25,18.75,800,Tablets,Finished Goods Area,"Immune system support supplement",40,active,1,finished,2025-11-15
+Chemical Solvent Beta,Solvent Beta,CHEM-SOLV-008,95.00,0.00,500,L,Raw Materials Section,"Industrial solvent for chemical processes",25,active,2,raw,
+Glass Vials 5ml,N/A,VIAL-5ML-009,1.75,0.00,3000,PCS,Packaging,"Glass vials for liquid medications",150,active,3,packaging,
+Antibiotic Cream 30g,Mupirocin,ANTI-CRM-010,18.50,42.00,300,Tubes,Main Warehouse,"Topical antibiotic for skin infections",15,active,1,finished,2025-08-20
