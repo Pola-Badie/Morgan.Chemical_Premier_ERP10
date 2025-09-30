@@ -17,7 +17,7 @@
   "functions": {
     "api/index.ts": {
       "maxDuration": 30,
-      "includeFiles": "{shared,server}/**"
+      "includeFiles": "shared/schema.ts"
     }
   },
   "env": {
