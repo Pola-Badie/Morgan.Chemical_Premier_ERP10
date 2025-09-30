@@ -7,18 +7,18 @@ import { eq } from "drizzle-orm";
  * Seeds default permissions for all roles and modules
  */
 export class PermissionSeeder {
-  
+
   /**
    * Seed default role-based permissions for Premier ERP
    */
   async seedRolePermissions(): Promise<void> {
     console.log('🌱 Seeding role-based permissions...');
-    
+
     const rolePermissionData = [
       // ADMIN - Full access to everything
       ...this.createRolePermissions('admin', [
-        'dashboard', 'inventory', 'orders', 'procurement', 'accounting', 
-        'expenses', 'invoices', 'quotations', 'customers', 'suppliers', 
+        'dashboard', 'inventory', 'orders', 'procurement', 'accounting',
+        'expenses', 'invoices', 'quotations', 'customers', 'suppliers',
         'users', 'user_management', 'reports', 'system_preferences', 'backups'
       ], ['create', 'read', 'update', 'delete', 'export', 'approve']),
 
@@ -68,10 +68,10 @@ export class PermissionSeeder {
    */
   async seedAdminUserPermissions(): Promise<void> {
     console.log('🌱 Seeding admin user permissions...');
-    
+
     // Find admin user
     const adminUsers = await db.select().from(users).where(eq(users.role, 'admin'));
-    
+
     if (adminUsers.length === 0) {
       console.log('No admin users found - skipping admin user permission seeding');
       return;
@@ -115,18 +115,18 @@ export class PermissionSeeder {
    * Create role permission entries for a role, resources, and actions
    */
   private createRolePermissions(
-    role: string, 
-    resources: string[], 
+    role: string,
+    resources: string[],
     actions: string[]
-  ): Array<{role: string, resource: string, action: string}> {
+  ): Array<{ role: string, resource: string, action: string }> {
     const permissions = [];
-    
+
     for (const resource of resources) {
       for (const action of actions) {
         permissions.push({ role, resource, action });
       }
     }
-    
+
     return permissions;
   }
 
@@ -135,11 +135,11 @@ export class PermissionSeeder {
    */
   async seedAll(): Promise<void> {
     console.log('🚀 Starting permission seeding for Premier ERP...');
-    
+
     try {
       await this.seedRolePermissions();
       await this.seedAdminUserPermissions();
-      
+
       console.log('🎉 Permission seeding completed successfully!');
     } catch (error) {
       console.error('❌ Permission seeding failed:', error);
@@ -156,16 +156,16 @@ export class PermissionSeeder {
     totalUsers: number;
     adminUsers: number;
   }> {
-    const [rolePermsCount] = await db.execute('SELECT COUNT(*) as count FROM role_permissions');
-    const [userPermsCount] = await db.execute('SELECT COUNT(*) as count FROM user_permissions');
-    const [totalUsersCount] = await db.execute('SELECT COUNT(*) as count FROM users');
-    const [adminUsersCount] = await db.execute("SELECT COUNT(*) as count FROM users WHERE role = 'admin'");
+    const rolePermsCount = await db.execute('SELECT COUNT(*) as count FROM role_permissions');
+    const userPermsCount = await db.execute('SELECT COUNT(*) as count FROM user_permissions');
+    const totalUsersCount = await db.execute('SELECT COUNT(*) as count FROM users');
+    const adminUsersCount = await db.execute("SELECT COUNT(*) as count FROM users WHERE role = 'admin'");
 
     return {
-      rolePermissions: rolePermsCount.rows[0]?.count || 0,
-      userPermissions: userPermsCount.rows[0]?.count || 0,
-      totalUsers: totalUsersCount.rows[0]?.count || 0,
-      adminUsers: adminUsersCount.rows[0]?.count || 0
+      rolePermissions: (rolePermsCount as any).rows[0]?.count || 0,
+      userPermissions: (userPermsCount as any).rows[0]?.count || 0,
+      totalUsers: (totalUsersCount as any).rows[0]?.count || 0,
+      adminUsers: (adminUsersCount as any).rows[0]?.count || 0
     };
   }
 }

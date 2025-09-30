@@ -24,7 +24,7 @@ export function registerPaymentProcessingRoutes(app: Express) {
 
       // Generate payment number
       const paymentCount = await db.select({ count: sql`count(*)::int` }).from(customerPayments);
-      const paymentNumber = `PAY-${String(paymentCount[0].count + 1).padStart(6, '0')}`;
+      const paymentNumber = `PAY-${String((paymentCount[0] as any).count + 1).padStart(6, '0')}`;
 
       // Create payment record
       const [payment] = await db.insert(customerPayments).values({
@@ -162,12 +162,11 @@ async function createPaymentAccountingEntries(payment: any, customerId: number, 
 
     // Create journal entry
     const [journalEntry] = await db.insert(journalEntries).values({
+      entryNumber: `JE-${Date.now()}`,
       date: payment.paymentDate,
-      description: `Payment ${payment.paymentNumber} from ${customerName}`,
       reference: payment.paymentNumber,
-      type: 'payment',
       status: 'posted',
-      createdBy: 2,
+      userId: 2,
       totalDebit: amount.toFixed(2),
       totalCredit: amount.toFixed(2)
     }).returning();

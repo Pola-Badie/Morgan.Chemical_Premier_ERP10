@@ -18,14 +18,14 @@ export abstract class BaseStorage {
   protected async findAll<T>(table: any, conditions?: any): Promise<T[]> {
     let query = this.db.select().from(table);
     if (conditions) {
-      query = query.where(conditions);
+      query = query.where(conditions) as any;
     }
     return await query;
   }
 
   protected async create<T>(table: any, data: any): Promise<T> {
-    const [record] = await this.db.insert(table).values(data).returning();
-    return record;
+    const result = await this.db.insert(table).values(data).returning();
+    return (result as any)[0] as T;
   }
 
   protected async updateById<T>(table: any, id: number, data: any): Promise<T | undefined> {
@@ -38,7 +38,7 @@ export abstract class BaseStorage {
 
   protected async deleteById(table: any, id: number): Promise<boolean> {
     const result = await this.db.delete(table).where(eq(table.id, id)).returning();
-    return result.length > 0;
+    return (result as any).length > 0;
   }
 
   protected async softDeleteById(table: any, id: number): Promise<boolean> {

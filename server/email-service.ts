@@ -2,6 +2,7 @@
 // Handles all email communications for the ERP system
 
 import nodemailer from 'nodemailer';
+import { eq } from 'drizzle-orm';
 import { db } from './db';
 import { emailQueue } from '@shared/schema';
 
@@ -37,13 +38,13 @@ export function initializeEmailService() {
 export async function queueEmail(to: string, subject: string, body: string) {
   try {
     await db.insert(emailQueue).values({
-      toEmail: to,
+      to: to,
       subject,
       body,
       status: 'pending',
-      attempts: 0
+      priority: 100
     });
-    
+
     // Try to send immediately
     processEmailQueue();
   } catch (error) {
@@ -74,10 +75,10 @@ async function sendEmail(emailRecord: any) {
     if (!transporter) {
       console.log(`📧 Email to ${emailRecord.toEmail}: ${emailRecord.subject}`);
       console.log(`Body: ${emailRecord.body.substring(0, 100)}...`);
-      
+
       // Mark as sent in development
       await db.update(emailQueue)
-        .set({ 
+        .set({
           status: 'sent',
           sentAt: new Date()
         })
@@ -95,22 +96,21 @@ async function sendEmail(emailRecord: any) {
 
     // Mark as sent
     await db.update(emailQueue)
-      .set({ 
+      .set({
         status: 'sent',
         sentAt: new Date()
       })
       .where(eq(emailQueue.id, emailRecord.id));
-      
-    console.log(`✅ Email sent to ${emailRecord.toEmail}`);
+
+    console.log(`✅ Email sent to ${emailRecord.to}`);
   } catch (error) {
-    console.error(`Failed to send email to ${emailRecord.toEmail}:`, error);
-    
+    console.error(`Failed to send email to ${emailRecord.to}:`, error);
+
     // Update attempt count
     await db.update(emailQueue)
-      .set({ 
-        attempts: emailRecord.attempts + 1,
-        errorMessage: error.message,
-        status: emailRecord.attempts >= 3 ? 'failed' : 'pending'
+      .set({
+        errorMessage: (error as Error).message,
+        status: 'failed'
       })
       .where(eq(emailQueue.id, emailRecord.id));
   }
@@ -130,7 +130,7 @@ export const emailTemplates = {
       <p>Premier ERP System</p>
     `
   }),
-  
+
   paymentReceived: (payment: any, customer: any) => ({
     subject: `Payment Received - ${payment.paymentNumber}`,
     body: `
@@ -143,7 +143,7 @@ export const emailTemplates = {
       <p>Premier ERP System</p>
     `
   }),
-  
+
   lowStockAlert: (product: any) => ({
     subject: `Low Stock Alert - ${product.name}`,
     body: `
@@ -159,7 +159,7 @@ export const emailTemplates = {
       <p>Premier ERP System</p>
     `
   }),
-  
+
   expiryAlert: (product: any) => ({
     subject: `Product Expiry Alert - ${product.name}`,
     body: `
@@ -184,12 +184,12 @@ export function startEmailScheduler() {
   if (emailInterval) {
     clearInterval(emailInterval);
   }
-  
+
   // Process email queue every 5 minutes instead of every minute
   emailInterval = setInterval(() => {
     processEmailQueue();
   }, 300000); // 5 minutes
-  
+
   console.log('✅ Email service initialized');
 }
 
@@ -203,5 +203,3 @@ export function stopEmailScheduler() {
 
 // Initialize on module load
 initializeEmailService();
-
-import { eq } from 'drizzle-orm';

@@ -110,8 +110,8 @@ export function registerETARoutes(app: Express) {
 
   // Submit invoice to ETA system (alternative endpoint for frontend compatibility)
   app.post("/api/eta/submit/:invoiceId", async (req: Request, res: Response) => {
+    const invoiceId = parseInt(req.params.invoiceId);
     try {
-      const invoiceId = parseInt(req.params.invoiceId);
       
       if (!invoiceId) {
         return res.status(400).json({

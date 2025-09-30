@@ -36,24 +36,24 @@ export class PermissionService {
    */
   async checkPermission(check: PermissionCheck): Promise<PermissionResult> {
     const startTime = Date.now();
-    
+
     try {
       // Get user details
       const [user] = await db.select().from(users).where(eq(users.id, check.userId));
-      
+
       if (!user) {
         const result: PermissionResult = {
           granted: false,
           reason: 'User not found'
         };
-        
+
         await this.accessLogger.logPermissionCheck({
           ...check,
           granted: false,
           reason: result.reason,
           responseTime: Date.now() - startTime
         });
-        
+
         return result;
       }
 
@@ -63,14 +63,14 @@ export class PermissionService {
           reason: 'User account is not active',
           user
         };
-        
+
         await this.accessLogger.logPermissionCheck({
           ...check,
           granted: false,
           reason: result.reason,
           responseTime: Date.now() - startTime
         });
-        
+
         return result;
       }
 
@@ -81,14 +81,14 @@ export class PermissionService {
           reason: 'Admin role - full access',
           user
         };
-        
+
         await this.accessLogger.logPermissionCheck({
           ...check,
           granted: true,
           reason: result.reason,
           responseTime: Date.now() - startTime
         });
-        
+
         return result;
       }
 
@@ -106,20 +106,20 @@ export class PermissionService {
       if (userPermission) {
         const result: PermissionResult = {
           granted: userPermission.accessGranted,
-          reason: userPermission.accessGranted 
-            ? 'Explicit user permission granted' 
+          reason: userPermission.accessGranted
+            ? 'Explicit user permission granted'
             : 'Explicit user permission denied',
           user,
           permission: userPermission
         };
-        
+
         await this.accessLogger.logPermissionCheck({
           ...check,
           granted: result.granted,
           reason: result.reason,
           responseTime: Date.now() - startTime
         });
-        
+
         return result;
       }
 
@@ -142,14 +142,14 @@ export class PermissionService {
           user,
           permission: rolePermission
         };
-        
+
         await this.accessLogger.logPermissionCheck({
           ...check,
           granted: true,
           reason: result.reason,
           responseTime: Date.now() - startTime
         });
-        
+
         return result;
       }
 
@@ -159,14 +159,14 @@ export class PermissionService {
         reason: 'No matching permission found - access denied',
         user
       };
-      
+
       await this.accessLogger.logPermissionCheck({
         ...check,
         granted: false,
         reason: result.reason,
         responseTime: Date.now() - startTime
       });
-      
+
       return result;
 
     } catch (error: any) {
@@ -174,7 +174,7 @@ export class PermissionService {
         granted: false,
         reason: `Permission check failed: ${error?.message || 'Unknown error'}`
       };
-      
+
       await this.accessLogger.logPermissionCheck({
         ...check,
         granted: false,
@@ -182,7 +182,7 @@ export class PermissionService {
         responseTime: Date.now() - startTime,
         error: error?.message || 'Unknown error'
       });
-      
+
       return result;
     }
   }
@@ -195,8 +195,8 @@ export class PermissionService {
     roleBased: RolePermission[];
     effective: string[];
   }> {
-    const [user] = await db.select().from(users).where(eq(users.id, String(userId)));
-    
+    const [user] = await db.select().from(users).where(eq(users.id, Number(userId)));
+
     if (!user) {
       throw new Error('User not found');
     }
@@ -205,7 +205,7 @@ export class PermissionService {
     const explicit = await db
       .select()
       .from(userPermissions)
-      .where(eq(userPermissions.userId, userId));
+      .where(eq(userPermissions.userId, Number(userId)));
 
     // Get role-based permissions
     const roleBased = await db
@@ -215,7 +215,7 @@ export class PermissionService {
 
     // Calculate effective permissions
     const effective: string[] = [];
-    
+
     // Add explicit granted permissions
     explicit.forEach(perm => {
       if (perm.accessGranted) {
@@ -226,10 +226,10 @@ export class PermissionService {
     // Add role-based permissions (unless explicitly denied)
     roleBased.forEach(perm => {
       const resource = perm.resource;
-      const explicitDenied = explicit.find(ep => 
+      const explicitDenied = explicit.find(ep =>
         ep.moduleName === resource && !ep.accessGranted
       );
-      
+
       if (!explicitDenied && !effective.includes(resource)) {
         effective.push(resource);
       }
@@ -242,8 +242,8 @@ export class PermissionService {
    * Set user permission for a specific module
    */
   async setUserPermission(
-    userId: number, 
-    moduleName: string, 
+    userId: number,
+    moduleName: string,
     accessGranted: boolean,
     adminUserId: number
   ): Promise<UserPermission> {
@@ -275,7 +275,7 @@ export class PermissionService {
       // Update existing permission
       const [updated] = await db
         .update(userPermissions)
-        .set({ 
+        .set({
           accessGranted,
           updatedAt: new Date()
         })
@@ -321,7 +321,7 @@ export class PermissionService {
       'dashboard',
       'inventory',
       'orders',
-      'procurement', 
+      'procurement',
       'accounting',
       'expenses',
       'invoices',

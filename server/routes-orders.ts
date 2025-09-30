@@ -18,7 +18,7 @@ async function checkStockAvailability(productId: number, requiredQuantity: numbe
 }> {
   try {
     let warehouseStock;
-    
+
     if (warehouseId) {
       // Check specific warehouse
       warehouseStock = await db
@@ -52,7 +52,7 @@ async function checkStockAvailability(productId: number, requiredQuantity: numbe
 
     const totalStock = warehouseStock.reduce((sum, stock) => sum + stock.quantity, 0);
     const availableStock = warehouseStock.reduce((sum, stock) => sum + stock.availableQuantity, 0);
-    
+
     return {
       available: availableStock >= requiredQuantity,
       totalStock,
@@ -80,7 +80,7 @@ async function deductInventoryStock(productId: number, quantity: number, warehou
 }> {
   try {
     const stockCheck = await checkStockAvailability(productId, quantity, warehouseId);
-    
+
     if (!stockCheck.available) {
       return {
         success: false,
@@ -118,10 +118,10 @@ async function deductInventoryStock(productId: number, quantity: number, warehou
       // Deduct from multiple warehouses if needed (FIFO approach)
       for (const warehouse of stockCheck.warehouseDetails) {
         if (remainingQuantity <= 0) break;
-        
+
         const availableInWarehouse = warehouse.availableQuantity;
         const deductFromWarehouse = Math.min(remainingQuantity, availableInWarehouse);
-        
+
         if (deductFromWarehouse > 0) {
           await db
             .update(warehouseInventory)
@@ -184,12 +184,12 @@ async function confirmInventoryDeduction(productId: number, quantity: number, wa
       // For now, implement simple approach
       const stockCheck = await checkStockAvailability(productId, quantity);
       let remainingQuantity = quantity;
-      
+
       for (const warehouse of stockCheck.warehouseDetails) {
         if (remainingQuantity <= 0) break;
-        
+
         const deductFromWarehouse = Math.min(remainingQuantity, warehouse.reservedQuantity);
-        
+
         if (deductFromWarehouse > 0) {
           await db
             .update(warehouseInventory)
@@ -208,7 +208,7 @@ async function confirmInventoryDeduction(productId: number, quantity: number, wa
         }
       }
     }
-    
+
     return true;
   } catch (error) {
     console.error('Error confirming inventory deduction:', error);
@@ -221,7 +221,7 @@ export function registerOrderRoutes(app: Express) {
   app.post("/api/orders", async (req: Request, res: Response) => {
     try {
       const orderData = req.body;
-      
+
       // Generate order number if not provided
       if (!orderData.orderNumber) {
         const orderCount = await db.select().from(orders);
@@ -232,7 +232,7 @@ export function registerOrderRoutes(app: Express) {
       // Parse materials and packaging from JSON strings
       let materials = [];
       let packaging = [];
-      
+
       console.log('🔥 INCOMING ORDER DATA:', {
         materials: orderData.materials,
         packaging: orderData.packaging,
@@ -241,12 +241,12 @@ export function registerOrderRoutes(app: Express) {
         transportationCost: orderData.transportationCost,
         totalCost: orderData.totalCost
       });
-      
+
       try {
         // Handle multiple possible field names for materials
         const materialsData = orderData.materials || orderData.rawMaterials || [];
         const packagingData = orderData.packaging || orderData.packagingMaterials || [];
-        
+
         if (materialsData) {
           if (typeof materialsData === 'string') {
             try {
@@ -262,7 +262,7 @@ export function registerOrderRoutes(app: Express) {
                   .replace(/:"(\d+\.?\d*)":/g, ':$1:')  // Unquote numeric values in properties
                   .replace(/:"(\d+\.?\d*)",/g, ':"$1",')  // Keep quoted numeric values
                   .replace(/:"(\d+\.?\d*)"}/g, ':"$1"}');  // Keep quoted numeric values
-                
+
                 materials = JSON.parse(cleanedMaterials);
               } catch (e2) {
                 console.error('Failed to parse materials JSON:', e2, 'Raw:', materialsData);
@@ -275,7 +275,7 @@ export function registerOrderRoutes(app: Express) {
             materials = [];
           }
         }
-        
+
         if (packagingData) {
           if (typeof packagingData === 'string') {
             try {
@@ -291,7 +291,7 @@ export function registerOrderRoutes(app: Express) {
                   .replace(/:"(\d+\.?\d*)":/g, ':$1:')  // Unquote numeric values in properties
                   .replace(/:"(\d+\.?\d*)",/g, ':"$1",')  // Keep quoted numeric values
                   .replace(/:"(\d+\.?\d*)"}/g, ':"$1"}');  // Keep quoted numeric values
-                
+
                 packaging = JSON.parse(cleanedPackaging);
               } catch (e2) {
                 console.error('Failed to parse packaging JSON:', e2, 'Raw:', packagingData);
@@ -304,7 +304,7 @@ export function registerOrderRoutes(app: Express) {
             packaging = [];
           }
         }
-        
+
         console.log('🔥 PARSED MATERIALS:', materials.length > 0 ? `${materials.length} items` : 'none');
         console.log('🔥 PARSED MATERIALS DATA:', materials);
         console.log('🔥 PARSED PACKAGING:', packaging.length > 0 ? `${packaging.length} items` : 'none');
@@ -319,19 +319,19 @@ export function registerOrderRoutes(app: Express) {
       }
 
       // ============= INVENTORY VALIDATION AND DEDUCTION =============
-      
+
       // Validate stock availability for all materials before creating order
       const stockValidation = [];
       const inventoryDeductions = [];
-      
+
       if (materials && materials.length > 0) {
         for (const material of materials) {
           if (material.productId && material.quantity) {
             const stockCheck = await checkStockAvailability(
-              parseInt(material.productId), 
+              parseInt(material.productId),
               parseFloat(material.quantity)
             );
-            
+
             if (!stockCheck.available) {
               return res.status(400).json({
                 success: false,
@@ -346,7 +346,7 @@ export function registerOrderRoutes(app: Express) {
                 }
               });
             }
-            
+
             stockValidation.push({
               productId: material.productId,
               productName: material.name,
@@ -355,30 +355,30 @@ export function registerOrderRoutes(app: Express) {
             });
           }
         }
-        
+
         console.log('✅ STOCK VALIDATION PASSED for all materials');
-        
+
         // Reserve inventory for all materials
         for (const validation of stockValidation) {
           const deduction = await deductInventoryStock(
             validation.productId,
             validation.quantity
           );
-          
+
           if (!deduction.success) {
             // Rollback any previous reservations if this fails
             for (const prevDeduction of inventoryDeductions) {
               // TODO: Implement rollback logic
               console.error('⚠️ Need to rollback previous inventory reservations');
             }
-            
+
             return res.status(400).json({
               success: false,
               message: `Failed to reserve inventory for ${validation.productName}: ${deduction.error}`,
               error: 'INVENTORY_RESERVATION_FAILED'
             });
           }
-          
+
           inventoryDeductions.push({
             productId: validation.productId,
             productName: validation.productName,
@@ -386,7 +386,7 @@ export function registerOrderRoutes(app: Express) {
             deductions: deduction.deductions
           });
         }
-        
+
         console.log('✅ INVENTORY RESERVED successfully for all materials:', inventoryDeductions);
       }
 
@@ -408,17 +408,19 @@ export function registerOrderRoutes(app: Express) {
 
         // For production orders, we don't need targetProductId, only for refining orders
         const insertData: any = {
-          orderNumber: orderData.orderNumber,
-          orderType: orderData.orderType,
+          orderNumber: `ORD-${Date.now()}`,
+          orderType: orderData.orderType || 'production',
           customerId: orderData.customerId,
           userId: 1, // Default user ID, should be from session
           description: orderData.finalProduct || orderData.expectedOutput,
-          totalMaterialCost: parseFloat(orderData.subtotal || '0'),
-          totalAdditionalFees: parseFloat(orderData.transportationCost || '0'),
-          totalCost: parseFloat(orderData.totalCost || '0'),
+          totalMaterialCost: parseFloat(orderData.subtotal || '0').toString(),
+          totalAdditionalFees: parseFloat(orderData.transportationCost || '0').toString(),
+          totalCost: parseFloat(orderData.totalCost || '0').toString(),
+          profitMarginPercentage: parseFloat(orderData.profitMarginPercentage || '20').toString(),
           status: orderData.status || 'pending',
           expectedOutputQuantity: orderData.expectedOutput || '1',
-          refiningSteps: orderData.refiningSteps ? JSON.stringify(orderData.refiningSteps) : null,
+          rawMaterials: materials.length > 0 ? JSON.stringify(materials) : null,
+          packagingMaterials: packaging.length > 0 ? JSON.stringify(packaging) : null,
         };
 
         // Only add targetProductId for refining orders
@@ -426,21 +428,7 @@ export function registerOrderRoutes(app: Express) {
           insertData.targetProductId = orderData.targetProductId;
         }
 
-        newOrder = await db.insert(orders).values({
-          orderNumber: orderData.orderNumber,
-          orderType: orderData.orderType,
-          customerId: orderData.customerId,
-          userId: 1, // Default user ID, should be from session
-          description: orderData.finalProduct || orderData.expectedOutput,
-          totalMaterialCost: parseFloat(orderData.subtotal || '0'),
-          totalAdditionalFees: parseFloat(orderData.transportationCost || '0'),
-          totalCost: parseFloat(orderData.totalCost || '0'),
-          profitMarginPercentage: parseFloat(orderData.profitMarginPercentage || '20'),
-          status: orderData.status || 'pending',
-          expectedOutputQuantity: orderData.expectedOutput || '1',
-          rawMaterials: materials.length > 0 ? JSON.stringify(materials) : null,
-          packagingMaterials: packaging.length > 0 ? JSON.stringify(packaging) : null,
-        }).returning();
+        newOrder = await db.insert(orders).values(insertData).returning();
       } catch (dbError) {
         console.error('🔥 Database error creating order:', dbError);
         console.log('🔥 Database table not ready, creating order in memory for now');
@@ -484,18 +472,18 @@ export function registerOrderRoutes(app: Express) {
         completionDate: null,
         // Store detailed costs for real material tracking
         materialCostBreakdown: {
-          rawMaterialsCost: materials?.reduce((sum: number, mat: any) => 
+          rawMaterialsCost: materials?.reduce((sum: number, mat: any) =>
             sum + (parseFloat(mat.unitPrice || '0') * parseFloat(mat.quantity || '0')), 0) || 0,
-          packagingCost: packaging?.reduce((sum: number, pack: any) => 
+          packagingCost: packaging?.reduce((sum: number, pack: any) =>
             sum + (parseFloat(pack.unitPrice || '0') * parseFloat(pack.quantity || '0')), 0) || 0
         }
       };
 
       // Store this order in memory for the production history endpoint
-      if (!global.createdOrders) {
-        global.createdOrders = [];
+      if (!(global as any).createdOrders) {
+        (global as any).createdOrders = [];
       }
-      global.createdOrders.push(orderRecord);
+      (global as any).createdOrders.push(orderRecord);
 
       console.log('🔥 NEW ORDER CREATED:', orderRecord);
 
@@ -518,29 +506,29 @@ export function registerOrderRoutes(app: Express) {
     try {
       const orderId = parseInt(req.params.id);
       const { status } = req.body;
-      
+
       console.log(`🔄 UPDATING PRODUCTION ORDER ${orderId} STATUS:`, status);
-      
+
       if (!status || !['pending', 'in_progress', 'completed', 'cancelled'].includes(status)) {
         return res.status(400).json({ message: "Invalid status value" });
       }
-      
+
       // Update in database
       const updatedOrder = await db
         .update(orders)
         .set({ status, updatedAt: new Date() })
         .where(eq(orders.id, orderId))
         .returning();
-        
+
       if (!updatedOrder || updatedOrder.length === 0) {
         return res.status(404).json({ message: "Production order not found" });
       }
-      
+
       console.log(`✅ PRODUCTION ORDER ${orderId} STATUS UPDATED:`, updatedOrder[0].status);
       res.json({ success: true, order: updatedOrder[0] });
     } catch (error) {
       console.error("Error updating production order status:", error);
-      res.status(500).json({ message: "Failed to update production order status", error: error.message });
+      res.status(500).json({ message: "Failed to update production order status", error: (error as Error).message });
     }
   });
 
@@ -549,29 +537,29 @@ export function registerOrderRoutes(app: Express) {
     try {
       const orderId = parseInt(req.params.id);
       const { status } = req.body;
-      
+
       console.log(`🔄 UPDATING REFINING ORDER ${orderId} STATUS:`, status);
-      
+
       if (!status || !['pending', 'in_progress', 'completed', 'cancelled'].includes(status)) {
         return res.status(400).json({ message: "Invalid status value" });
       }
-      
+
       // Update in database
       const updatedOrder = await db
         .update(orders)
         .set({ status, updatedAt: new Date() })
         .where(eq(orders.id, orderId))
         .returning();
-        
+
       if (!updatedOrder || updatedOrder.length === 0) {
         return res.status(404).json({ message: "Refining order not found" });
       }
-      
+
       console.log(`✅ REFINING ORDER ${orderId} STATUS UPDATED:`, updatedOrder[0].status);
       res.json({ success: true, order: updatedOrder[0] });
     } catch (error) {
       console.error("Error updating refining order status:", error);
-      res.status(500).json({ message: "Failed to update refining order status", error: error.message });
+      res.status(500).json({ message: "Failed to update refining order status", error: (error as Error).message });
     }
   });
 
@@ -597,7 +585,7 @@ export function registerOrderRoutes(app: Express) {
           createdAt: "2025-01-15T08:00:00.000Z", // Added createdAt field
           rawMaterials: [
             "Para-aminobenzoic acid",
-            "Acetic anhydride", 
+            "Acetic anhydride",
             "Lactose",
             "Microcrystalline cellulose"
           ],
@@ -651,7 +639,7 @@ export function registerOrderRoutes(app: Express) {
           createdAt: "2025-02-01T10:15:00.000Z",
           rawMaterials: [
             "Amoxicillin trihydrate",
-            "Magnesium stearate", 
+            "Magnesium stearate",
             "Sodium starch glycolate",
             "Microcrystalline cellulose"
           ],
@@ -722,17 +710,17 @@ export function registerOrderRoutes(app: Express) {
   app.get("/api/orders/production-history", async (req: Request, res: Response) => {
     try {
       console.log('🔥 PRODUCTION ORDERS HISTORY: Fetching production orders from database and static data');
-      
+
       // Get orders from in-memory storage first (these are the ones created through Order Management)
       const memoryOrders = (global as any).createdOrders || [];
       console.log('🔥 MEMORY ORDERS FOUND:', memoryOrders.length);
-      console.log('🔥 MEMORY ORDERS DATA:', memoryOrders.map(order => ({ 
-        id: order.id, 
+      console.log('🔥 MEMORY ORDERS DATA:', memoryOrders.map((order: any) => ({
+        id: order.id,
         orderNumber: order.orderNumber,
         packagingCount: order.packagingMaterials?.length || 0,
-        packaging: order.packagingMaterials 
+        packaging: order.packagingMaterials
       })));
-      
+
       // Try to fetch orders from database, fall back to empty array if table doesn't exist yet
       let dbOrders: any[] = [];
       try {
@@ -777,18 +765,18 @@ export function registerOrderRoutes(app: Express) {
 
           // Generate batch number and other calculated fields
           const batchNumber = `BATCH-${order.orderNumber.split('-').pop()}-${String(order.id).padStart(3, '0')}`;
-          
+
           // Calculate revenue and profit using configurable margin from database
           const totalCost = parseFloat(order.totalCost);
           const profitMargin = parseFloat(order.profitMarginPercentage || '20');
           const markupMultiplier = 1 + (profitMargin / 100);
           const revenue = totalCost * markupMultiplier;
           const profit = totalCost * (profitMargin / 100);
-          
+
           // Parse real materials from database - they are stored as JSON
           let realRawMaterials = [];
           let realPackagingMaterials = [];
-          
+
           try {
             realRawMaterials = order.rawMaterials ? (Array.isArray(order.rawMaterials) ? order.rawMaterials : JSON.parse(order.rawMaterials)) : [];
             realPackagingMaterials = order.packagingMaterials ? (Array.isArray(order.packagingMaterials) ? order.packagingMaterials : JSON.parse(order.packagingMaterials)) : [];
@@ -797,10 +785,10 @@ export function registerOrderRoutes(app: Express) {
             realRawMaterials = [];
             realPackagingMaterials = [];
           }
-          
+
           console.log(`🔥 ORDER ${order.orderNumber}: rawMaterials count=${realRawMaterials.length}, packagingMaterials count=${realPackagingMaterials.length}`);
           console.log(`🔥 ORDER ${order.orderNumber} MATERIALS:`, JSON.stringify(realRawMaterials));
-          
+
           return {
             id: order.id + 100, // Offset to avoid ID conflicts with static data
             orderNumber: order.orderNumber,
@@ -810,7 +798,7 @@ export function registerOrderRoutes(app: Express) {
             customerCompany: customer[0]?.company || 'Unknown Company',
             finalProduct: order.description || 'Production Order',
             orderDate: order.createdAt.toISOString().split('T')[0],
-            completionDate: order.status === 'completed' 
+            completionDate: order.status === 'completed'
               ? new Date(order.createdAt.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
               : null,
             status: order.status,
@@ -824,9 +812,9 @@ export function registerOrderRoutes(app: Express) {
             packagingMaterials: realPackagingMaterials,
             productionSteps: ["Production", "Quality control", "Packaging", "Testing"],
             materialCostBreakdown: {
-              rawMaterialsCost: realRawMaterials?.reduce((sum: number, mat: any) => 
+              rawMaterialsCost: realRawMaterials?.reduce((sum: number, mat: any) =>
                 sum + (parseFloat(mat.unitPrice || '0') * parseFloat(mat.quantity || '0')), 0) || 0,
-              packagingCost: realPackagingMaterials?.reduce((sum: number, pack: any) => 
+              packagingCost: realPackagingMaterials?.reduce((sum: number, pack: any) =>
                 sum + (parseFloat(pack.unitPrice || '0') * parseFloat(pack.quantity || '0')), 0) || 0
             }
           };
@@ -852,7 +840,7 @@ export function registerOrderRoutes(app: Express) {
           createdAt: "2025-01-15T08:00:00.000Z",
           rawMaterials: [
             "Para-aminobenzoic acid",
-            "Acetic anhydride", 
+            "Acetic anhydride",
             "Lactose",
             "Microcrystalline cellulose"
           ],
@@ -922,7 +910,7 @@ export function registerOrderRoutes(app: Express) {
           createdAt: "2025-02-01T10:15:00.000Z",
           rawMaterials: [
             "Amoxicillin trihydrate",
-            "Magnesium stearate", 
+            "Magnesium stearate",
             "Sodium starch glycolate",
             "Microcrystalline cellulose"
           ],
@@ -1008,12 +996,12 @@ export function registerOrderRoutes(app: Express) {
           ]
         }
       ];
-      
+
       // Combine all orders: memory orders (from Order Management) + database orders + NO STATIC FAKE DATA
       const allOrders = [...memoryOrders, ...dbOrdersFormatted];
-      
+
       console.log(`🔥 PRODUCTION ORDERS HISTORY: Returning ${allOrders.length} REAL production orders (${memoryOrders.length} from Memory, ${dbOrdersFormatted.length} from DB, 0 fake static)`);
-      
+
       res.json(allOrders);
     } catch (error) {
       console.error("Error fetching production order history:", error);
@@ -1025,7 +1013,7 @@ export function registerOrderRoutes(app: Express) {
   app.get("/api/orders/detailed-history", async (req: Request, res: Response) => {
     try {
       console.log('🔄 DETAILED HISTORY: Fetching complete orders with all materials and cost details');
-      
+
       // Get all orders from database with complete information
       const dbOrders = await db.select({
         id: orders.id,
@@ -1050,16 +1038,16 @@ export function registerOrderRoutes(app: Express) {
         customerName: customers.name,
         customerCompany: customers.company
       })
-      .from(orders)
-      .leftJoin(customers, eq(orders.customerId, customers.id))
-      .orderBy(desc(orders.createdAt));
+        .from(orders)
+        .leftJoin(customers, eq(orders.customerId, customers.id))
+        .orderBy(desc(orders.createdAt));
 
       // Get memory orders (created in current session)
       const memoryOrders = (global as any).createdOrders || [];
 
       // Remove duplicates: exclude memory orders that already exist in database
       const dbOrderNumbers = new Set(dbOrders.map(order => order.orderNumber));
-      const uniqueMemoryOrders = memoryOrders.filter(order => {
+      const uniqueMemoryOrders = memoryOrders.filter((order: any) => {
         const orderNumber = order.orderNumber || order.order_number;
         return !dbOrderNumbers.has(orderNumber);
       });
@@ -1068,8 +1056,8 @@ export function registerOrderRoutes(app: Express) {
       const taxRatePreference = await db.select().from(systemPreferences)
         .where(eq(systemPreferences.key, 'financial_vatRate'))
         .limit(1);
-      const systemTaxRate = taxRatePreference.length > 0 ? 
-        parseFloat(taxRatePreference[0].value) / 100 : 0.14; // Default to 14%
+      const systemTaxRate = taxRatePreference.length > 0 ?
+        parseFloat((taxRatePreference[0] as any).value) / 100 : 0.14; // Default to 14%
 
       // Transform and combine all orders using utility functions  
       const allOrders = [...dbOrders, ...uniqueMemoryOrders].map((order, index) => {
@@ -1088,17 +1076,17 @@ export function registerOrderRoutes(app: Express) {
         // CORRECT financial calculation:
         // 1. Total actual cost = materials + packaging + transport/fees
         const actualTotalCost = rawMaterialsCost + packagingCost + additionalFees;
-        
+
         // 2. Apply profit margin to get selling price (before tax)
         const sellingPrice = actualTotalCost * (1 + profitMargin / 100);
-        
+
         // 3. Calculate tax on selling price (using system preference)
         const taxRate = systemTaxRate;
         const taxAmount = sellingPrice * taxRate;
-        
+
         // 4. Final revenue (selling price + tax)
         const revenue = sellingPrice + taxAmount;
-        
+
         // 5. Actual profit (selling price - actual cost)
         const profit = sellingPrice - actualTotalCost;
 
@@ -1143,14 +1131,14 @@ export function registerOrderRoutes(app: Express) {
           completedOrders: allOrders.filter(o => o.status === 'completed').length,
           pendingOrders: allOrders.filter(o => o.status === 'pending').length,
           averageOrderValue: allOrders.length > 0 ? allOrders.reduce((sum, order) => sum + (order.revenue || 0), 0) / allOrders.length : 0,
-          profitMargin: allOrders.length > 0 ? 
+          profitMargin: allOrders.length > 0 ?
             (allOrders.reduce((sum, order) => sum + (order.profit || 0), 0) / allOrders.reduce((sum, order) => sum + (order.revenue || 0), 0)) * 100 : 0
         }
       });
     } catch (error) {
       console.error('🔥 Error fetching detailed order history:', error);
-      res.status(500).json({ 
-        success: false, 
+      res.status(500).json({
+        success: false,
         message: "Failed to fetch detailed order history",
         error: error instanceof Error ? error.message : 'Unknown error'
       });
@@ -1161,9 +1149,9 @@ export function registerOrderRoutes(app: Express) {
   app.get("/api/orders/refining-history", async (req: Request, res: Response) => {
     try {
       console.log('🔥 REFINING ORDERS HISTORY: Fetching refining orders from database and static data');
-      
+
       // Access memory orders created in this session
-      const memoryOrders = global.createdOrders ? global.createdOrders.filter((order: any) => order.orderType === 'refining') : [];
+      const memoryOrders = (global as any).createdOrders ? (global as any).createdOrders.filter((order: any) => order.orderType === 'refining') : [];
       console.log(`🔥 MEMORY ORDERS FOUND: ${memoryOrders.length}`);
 
       // Fetch refining orders from database - USING EXACT SAME PATTERN AS PRODUCTION
@@ -1188,7 +1176,7 @@ export function registerOrderRoutes(app: Express) {
           .from(orders)
           .where(eq(orders.orderType, 'refining'))
           .orderBy(desc(orders.createdAt));
-          
+
         console.log(`🔥 REFINING DB QUERY SUCCESS: Found ${dbOrders.length} refining orders from database`);
       } catch (dbError) {
         console.log('🔥 REFINING Database table not ready yet, using memory only');
@@ -1212,18 +1200,18 @@ export function registerOrderRoutes(app: Express) {
 
           // Generate batch number and other calculated fields
           const batchNumber = `REF-BATCH-${order.orderNumber.split('-').pop()}-${String(order.id).padStart(3, '0')}`;
-          
+
           // Calculate revenue and profit using configurable margin from database
           const totalCost = parseFloat(order.totalCost);
           const profitMargin = parseFloat(order.profitMarginPercentage || '20');
           const markupMultiplier = 1 + (profitMargin / 100);
           const revenue = totalCost * markupMultiplier;
           const profit = totalCost * (profitMargin / 100);
-          
+
           // Parse real materials from database - they are stored as JSON
           let realRawMaterials = [];
           let realPackagingMaterials = [];
-          
+
           try {
             realRawMaterials = order.rawMaterials ? (Array.isArray(order.rawMaterials) ? order.rawMaterials : JSON.parse(order.rawMaterials)) : [];
             realPackagingMaterials = order.packagingMaterials ? (Array.isArray(order.packagingMaterials) ? order.packagingMaterials : JSON.parse(order.packagingMaterials)) : [];
@@ -1232,7 +1220,7 @@ export function registerOrderRoutes(app: Express) {
             realRawMaterials = [];
             realPackagingMaterials = [];
           }
-          
+
           return {
             id: order.id + 200, // Offset to avoid ID conflicts with static data
             orderNumber: order.orderNumber,
@@ -1242,7 +1230,7 @@ export function registerOrderRoutes(app: Express) {
             customerCompany: customer[0]?.company || 'Unknown Company',
             finalProduct: order.description || 'Refining Order',
             orderDate: order.createdAt.toISOString().split('T')[0],
-            completionDate: order.status === 'completed' 
+            completionDate: order.status === 'completed'
               ? new Date(order.createdAt.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
               : null,
             status: order.status,
@@ -1256,9 +1244,9 @@ export function registerOrderRoutes(app: Express) {
             packagingMaterials: realPackagingMaterials,
             productionSteps: ["Material preparation", "Refining process", "Quality control", "Packaging"],
             materialCostBreakdown: {
-              rawMaterialsCost: realRawMaterials?.reduce((sum: number, mat: any) => 
+              rawMaterialsCost: realRawMaterials?.reduce((sum: number, mat: any) =>
                 sum + (parseFloat(mat.unitPrice || '0') * parseFloat(mat.quantity || '0')), 0) || 0,
-              packagingCost: realPackagingMaterials?.reduce((sum: number, pack: any) => 
+              packagingCost: realPackagingMaterials?.reduce((sum: number, pack: any) =>
                 sum + (parseFloat(pack.unitPrice || '0') * parseFloat(pack.quantity || '0')), 0) || 0
             }
           };
@@ -1267,9 +1255,9 @@ export function registerOrderRoutes(app: Express) {
 
       // ONLY return real orders - NO STATIC DATA
       const allOrders = [...memoryOrders, ...dbOrdersFormatted];
-      
+
       console.log(`🔥 REFINING ORDERS HISTORY: Returning ${allOrders.length} REAL refining orders (${memoryOrders.length} from Memory, ${dbOrdersFormatted.length} from DB, 0 static)`);
-      
+
       res.json(allOrders);
     } catch (error) {
       console.error("Error fetching refining order history:", error);
@@ -1284,9 +1272,9 @@ export function registerOrderRoutes(app: Express) {
       const { profitMarginPercentage } = req.body;
 
       if (!profitMarginPercentage || profitMarginPercentage < 0 || profitMarginPercentage > 100) {
-        return res.status(400).json({ 
-          success: false, 
-          message: "Valid profit margin percentage (0-100) is required" 
+        return res.status(400).json({
+          success: false,
+          message: "Valid profit margin percentage (0-100) is required"
         });
       }
 
@@ -1309,17 +1297,17 @@ export function registerOrderRoutes(app: Express) {
       // Update the order in the database
       const updatedOrder = await db
         .update(orders)
-        .set({ 
-          profitMarginPercentage: parseFloat(profitMarginPercentage),
+        .set({
+          profitMarginPercentage: profitMarginPercentage,
           updatedAt: new Date()
         })
         .where(eq(orders.id, actualId))
         .returning();
 
       if (updatedOrder.length === 0) {
-        return res.status(404).json({ 
-          success: false, 
-          message: "Order not found" 
+        return res.status(404).json({
+          success: false,
+          message: "Order not found"
         });
       }
 
@@ -1342,9 +1330,9 @@ export function registerOrderRoutes(app: Express) {
       });
     } catch (error) {
       console.error("Error updating profit margin:", error);
-      res.status(500).json({ 
-        success: false, 
-        message: "Failed to update profit margin" 
+      res.status(500).json({
+        success: false,
+        message: "Failed to update profit margin"
       });
     }
   });
@@ -1357,9 +1345,9 @@ export function registerOrderRoutes(app: Express) {
 
       const validStatuses = ['pending', 'in-progress', 'completed', 'cancelled'];
       if (!status || !validStatuses.includes(status)) {
-        return res.status(400).json({ 
-          success: false, 
-          message: "Valid status is required (pending, in-progress, completed, cancelled)" 
+        return res.status(400).json({
+          success: false,
+          message: "Valid status is required (pending, in-progress, completed, cancelled)"
         });
       }
 
@@ -1382,7 +1370,7 @@ export function registerOrderRoutes(app: Express) {
       // Update the order status in the database
       const updatedOrder = await db
         .update(orders)
-        .set({ 
+        .set({
           status: status,
           updatedAt: new Date()
         })
@@ -1390,22 +1378,22 @@ export function registerOrderRoutes(app: Express) {
         .returning();
 
       if (updatedOrder.length === 0) {
-        return res.status(404).json({ 
-          success: false, 
-          message: "Order not found" 
+        return res.status(404).json({
+          success: false,
+          message: "Order not found"
         });
       }
 
-      res.json({ 
-        success: true, 
+      res.json({
+        success: true,
         message: "Order status updated successfully",
         updatedOrder: updatedOrder[0]
       });
     } catch (error) {
       console.error("Error updating order status:", error);
-      res.status(500).json({ 
-        success: false, 
-        message: "Failed to update order status" 
+      res.status(500).json({
+        success: false,
+        message: "Failed to update order status"
       });
     }
   });

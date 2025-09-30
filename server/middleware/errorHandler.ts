@@ -93,7 +93,7 @@ export const errorHandler = (
   });
 
   // Handle specific database errors
-  if (err.code === '57P01') {
+  if ((err as any).code === '57P01') {
     return res.status(503).json({
       error: {
         message: 'Database connection temporarily unavailable. Please try again.',
@@ -128,11 +128,11 @@ export const asyncHandler = (fn: Function) => {
       
       // Send appropriate error response
       if (!res.headersSent) {
-        const statusCode = error.statusCode || 500;
+        const statusCode = (error as any).statusCode || 500;
         res.status(statusCode).json({
           error: {
-            message: error.message || 'Internal server error',
-            ...(process.env.NODE_ENV === 'development' && { stack: error.stack }),
+            message: (error as Error).message || 'Internal server error',
+            ...(process.env.NODE_ENV === 'development' && { stack: (error as Error).stack }),
           }
         });
       }

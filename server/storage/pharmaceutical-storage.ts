@@ -12,7 +12,7 @@ export class PharmaceuticalStorage extends BaseStorage implements IPharmaceutica
   async getBatches(filters?: { productId?: number; status?: string; supplierId?: number }): Promise<Batch[]> {
     let query = this.db.select().from(batches);
     const conditions = [];
-    
+
     if (filters?.productId) {
       conditions.push(this.eq(batches.productId, filters.productId));
     }
@@ -22,11 +22,11 @@ export class PharmaceuticalStorage extends BaseStorage implements IPharmaceutica
     if (filters?.supplierId) {
       conditions.push(this.eq(batches.supplierId, filters.supplierId));
     }
-    
+
     if (conditions.length > 0) {
-      query = query.where(this.and(...conditions));
+      query = query.where(this.and(...conditions)) as any;
     }
-    
+
     return await query.orderBy(this.desc(batches.createdAt));
   }
 
@@ -59,7 +59,7 @@ export class PharmaceuticalStorage extends BaseStorage implements IPharmaceutica
     const futureDate = new Date();
     futureDate.setDate(futureDate.getDate() + days);
     const expiryThreshold = futureDate.toISOString().split('T')[0];
-    
+
     return await this.db.select()
       .from(batches)
       .where(this.lte(batches.expiryDate, expiryThreshold))
@@ -83,7 +83,7 @@ export class PharmaceuticalStorage extends BaseStorage implements IPharmaceutica
     return await this.db.select()
       .from(productFormulations)
       .where(this.eq(productFormulations.productId, productId))
-      .orderBy(productFormulations.ingredient);
+      .orderBy(productFormulations.ingredientId);
   }
 
   async getFormulation(id: number): Promise<ProductFormulation | undefined> {
@@ -132,11 +132,11 @@ export class PharmaceuticalStorage extends BaseStorage implements IPharmaceutica
   // Quality Control
   async getQualityTests(batchId?: number): Promise<QualityTest[]> {
     let query = this.db.select().from(qualityTests);
-    
+
     if (batchId) {
-      query = query.where(this.eq(qualityTests.batchId, batchId));
+      query = query.where(this.eq(qualityTests.batchId, batchId)) as any;
     }
-    
+
     return await query.orderBy(this.desc(qualityTests.testDate));
   }
 
@@ -167,18 +167,18 @@ export class PharmaceuticalStorage extends BaseStorage implements IPharmaceutica
   async getRegulatorySubmissions(productId?: number, status?: string): Promise<RegulatorySubmission[]> {
     let query = this.db.select().from(regulatorySubmissions);
     const conditions = [];
-    
+
     if (productId) {
       conditions.push(this.eq(regulatorySubmissions.productId, productId));
     }
     if (status) {
       conditions.push(this.eq(regulatorySubmissions.status, status));
     }
-    
+
     if (conditions.length > 0) {
-      query = query.where(this.and(...conditions));
+      query = query.where(this.and(...conditions)) as any;
     }
-    
+
     return await query.orderBy(this.desc(regulatorySubmissions.submissionDate));
   }
 
@@ -216,8 +216,8 @@ export class PharmaceuticalStorage extends BaseStorage implements IPharmaceutica
       .from(qualityTests)
       .where(
         this.and(
-          this.gte(qualityTests.testDate, startDate),
-          this.lte(qualityTests.testDate, endDate)
+          this.gte(qualityTests.testDate, new Date(startDate)),
+          this.lte(qualityTests.testDate, new Date(endDate))
         )
       )
       .orderBy(this.desc(qualityTests.testDate));
@@ -226,7 +226,7 @@ export class PharmaceuticalStorage extends BaseStorage implements IPharmaceutica
   async getFormulationsByIngredient(ingredient: string): Promise<ProductFormulation[]> {
     return await this.db.select()
       .from(productFormulations)
-      .where(this.eq(productFormulations.ingredient, ingredient))
-      .orderBy(productFormulations.percentage);
+      .where(this.eq(productFormulations.ingredientId, Number(ingredient)))
+      .orderBy(productFormulations.ingredientId);
   }
 }

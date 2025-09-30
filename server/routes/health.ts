@@ -95,7 +95,7 @@ router.get('/health/detailed', async (req, res) => {
   try {
     // Test database connection
     const { db } = await import('../db.js');
-    const testQuery = await db.select().from(accounts).limit(1);
+    const testQuery = await db.execute('SELECT 1');
     
     // Test file system
     const fs = await import('fs');
@@ -108,7 +108,7 @@ router.get('/health/detailed', async (req, res) => {
       environment: process.env.NODE_ENV,
       database: {
         status: 'connected',
-        recordCount: testQuery.length
+        recordCount: 1
       },
       filesystem: {
         uploads: uploadsExists ? 'accessible' : 'missing'
@@ -124,7 +124,7 @@ router.get('/health/detailed', async (req, res) => {
   } catch (error) {
     res.status(500).json({
       status: 'unhealthy',
-      error: error.message,
+      error: (error as Error).message,
       timestamp: new Date().toISOString()
     });
   }

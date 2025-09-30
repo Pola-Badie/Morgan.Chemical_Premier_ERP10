@@ -1,8 +1,8 @@
 import { Express, Request, Response } from "express";
 import { db } from "./db";
-import { 
-  sales, 
-  expenses, 
+import {
+  sales,
+  expenses,
   customers,
   expenseCategories,
   insertSaleSchema,
@@ -10,32 +10,32 @@ import {
   expenses as expensesTable
 } from "@shared/schema";
 import { eq, sql } from "drizzle-orm";
-import { 
-  createInvoiceJournalEntry, 
+import {
+  createInvoiceJournalEntry,
   createExpenseJournalEntry,
-  updateAccountBalances 
+  updateAccountBalances
 } from "./accounting-integration";
 
 export function registerFinancialIntegrationRoutes(app: Express) {
-  
+
   // Enhanced Sales/Invoice Creation with Automatic Journal Entry
   app.post("/api/sales", async (req: Request, res: Response) => {
     try {
       const validatedData = insertSaleSchema.parse(req.body);
-      
+
       // Create the sale/invoice record
       const [sale] = await db
         .insert(sales)
         .values(validatedData)
         .returning();
-      
+
       // Get customer information for journal entry
       const [customer] = await db
         .select()
         .from(customers)
         .where(eq(customers.id, sale.customerId!))
         .limit(1);
-      
+
       // Automatically create journal entry for the invoice
       if (customer) {
         try {
@@ -47,19 +47,19 @@ export function registerFinancialIntegrationRoutes(app: Express) {
             tax: parseFloat(sale.tax || '0'),
             grandTotal: parseFloat(sale.grandTotal || '0')
           };
-          
+
           // Get user ID from request or session, default to 1 if not available
           const userId = req.body.userId || 1;
           const journalEntry = await createInvoiceJournalEntry(invoiceData, userId);
           await updateAccountBalances(journalEntry.id);
-          
+
           console.log(`Journal entry created for invoice ${sale.invoiceNumber}: ${journalEntry.entryNumber}`);
         } catch (journalError) {
           console.error("Error creating journal entry for invoice:", journalError);
           // Continue even if journal entry fails - the sale is still created
         }
       }
-      
+
       res.status(201).json(sale);
     } catch (error) {
       console.error("Error creating sale:", error);
@@ -71,13 +71,19 @@ export function registerFinancialIntegrationRoutes(app: Express) {
   app.post("/api/expenses", async (req: Request, res: Response) => {
     try {
       const validatedData = insertExpenseSchema.parse(req.body);
-      
+
       // Create the expense record
+      const processedData = {
+        ...validatedData,
+        date: validatedData.date ? (validatedData.date instanceof Date ? validatedData.date.toISOString().split('T')[0] : validatedData.date) : new Date().toISOString().split('T')[0],
+        amount: typeof validatedData.amount === 'number' ? validatedData.amount.toString() : validatedData.amount
+      };
+
       const [expense] = await db
         .insert(expensesTable)
-        .values(validatedData)
+        .values(processedData)
         .returning();
-      
+
       // Create corresponding journal entry for accounting integration
       try {
         const userId = req.body.userId || 1;
@@ -88,16 +94,16 @@ export function registerFinancialIntegrationRoutes(app: Express) {
           description: expense.description,
           date: expense.date
         };
-        
+
         const journalEntry = await createExpenseJournalEntry(expenseData, userId);
         await updateAccountBalances(journalEntry.id);
-        
+
         console.log(`✅ Expense journal entry created: ${journalEntry.entryNumber} for expense ${expense.id}`);
       } catch (journalError) {
         console.error("Error creating journal entry for expense:", journalError);
         // Continue even if journal entry fails - the expense is still created
       }
-      
+
       res.status(201).json(expense);
     } catch (error) {
       console.error("Error creating expense:", error);
@@ -110,24 +116,24 @@ export function registerFinancialIntegrationRoutes(app: Express) {
     try {
       const { id } = req.params;
       const updates = req.body;
-      
+
       // Update the sale
       const [updatedSale] = await db
         .update(sales)
         .set(updates)
         .where(eq(sales.id, parseInt(id)))
         .returning();
-      
+
       if (!updatedSale) {
         return res.status(404).json({ error: "Sale not found" });
       }
-      
+
       // If the sale payment status changed to 'completed', we might want to create additional journal entries
       if (updates.paymentStatus === 'completed' && updatedSale.paymentStatus !== 'completed') {
         // This could trigger a payment journal entry
         console.log(`Sale ${id} marked as paid - consider creating payment journal entry`);
       }
-      
+
       res.json(updatedSale);
     } catch (error) {
       console.error("Error updating sale:", error);
@@ -140,18 +146,18 @@ export function registerFinancialIntegrationRoutes(app: Express) {
     try {
       const { id } = req.params;
       const updates = req.body;
-      
+
       // Update the expense
       const [updatedExpense] = await db
         .update(expensesTable)
         .set(updates)
         .where(eq(expensesTable.id, parseInt(id)))
         .returning();
-      
+
       if (!updatedExpense) {
         return res.status(404).json({ error: "Expense not found" });
       }
-      
+
       res.json(updatedExpense);
     } catch (error) {
       console.error("Error updating expense:", error);
@@ -163,7 +169,7 @@ export function registerFinancialIntegrationRoutes(app: Express) {
   app.get("/api/financial-transactions", async (req: Request, res: Response) => {
     try {
       const { type, startDate, endDate } = req.query;
-      
+
       // Get recent sales with optional date filter
       const salesResults = await db
         .select({
@@ -177,7 +183,7 @@ export function registerFinancialIntegrationRoutes(app: Express) {
         })
         .from(sales)
         .where(startDate ? sql`DATE(${sales.date}) >= ${startDate}` : sql`1=1`);
-      
+
       // Get recent expenses with optional date filter
       const expensesResults = await db
         .select({
@@ -191,7 +197,7 @@ export function registerFinancialIntegrationRoutes(app: Express) {
         })
         .from(expensesTable)
         .where(startDate ? sql`${expensesTable.date} >= ${startDate}` : sql`1=1`);
-      
+
       // Combine and format results
       const transactions = [
         ...salesResults.map(sale => ({
@@ -205,10 +211,10 @@ export function registerFinancialIntegrationRoutes(app: Express) {
           impact: 'negative'
         }))
       ];
-      
+
       // Sort by date, most recent first
       transactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-      
+
       res.json(transactions);
     } catch (error) {
       console.error("Error fetching financial transactions:", error);
@@ -220,7 +226,7 @@ export function registerFinancialIntegrationRoutes(app: Express) {
   app.get("/api/financial-integration/status", async (req: Request, res: Response) => {
     try {
       console.log('🔍 INTEGRATION STATUS: Checking financial integration health...');
-      
+
       // Check database connectivity and get real financial data
       let dbStatus = 'active';
       let integrationStatus = 'connected';
@@ -283,14 +289,14 @@ export function registerFinancialIntegrationRoutes(app: Express) {
           autoAccounting: integrationStatus === 'connected' && dbStatus === 'active',
           reportGeneration: true // Always available for basic reports
         },
-        message: dbStatus === 'active' 
+        message: dbStatus === 'active'
           ? `All systems operational - Real financial integration active (${summary.totalRevenue.toLocaleString()} EGP revenue)`
           : 'System integration issues detected - Please check database connectivity'
       };
 
       console.log('✅ INTEGRATION STATUS: Response prepared', response);
       res.json(response);
-      
+
     } catch (error) {
       console.error("❌ INTEGRATION STATUS FAILED:", error);
       res.status(500).json({

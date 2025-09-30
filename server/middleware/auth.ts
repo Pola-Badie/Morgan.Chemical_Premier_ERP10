@@ -27,7 +27,6 @@ export const apiRateLimit = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  trustProxy: true, // Trust proxy headers
   skip: (req) => {
     // Skip rate limiting for localhost and development
     return req.ip === '127.0.0.1' || req.ip === '::1' || process.env.NODE_ENV === 'development';
@@ -39,7 +38,7 @@ export const apiRateLimit = rateLimit({
   handler: (req, res) => {
     res.status(429).json({
       error: 'Too many requests. Please try again later.',
-      retryAfter: Math.ceil(req.rateLimit?.resetTime?.getTime() / 1000) || 60
+      retryAfter: Math.ceil((req as any).rateLimit?.resetTime?.getTime() / 1000) || 60
     });
   }
 });
@@ -65,7 +64,7 @@ export const authenticateToken = (req: AuthenticatedRequest, res: Response, next
     if (err) {
       return res.status(403).json({ error: 'Invalid or expired token' });
     }
-    req.user = user;
+    req.user = user as any;
     next();
   });
 };
@@ -99,16 +98,17 @@ export const requirePermission = (permission: string) => {
 };
 
 export const generateToken = (user: any) => {
-  return jwt.sign(
-    {
-      id: user.id,
-      username: user.username,
-      role: user.role,
-      permissions: user.permissions || [],
-    },
-    JWT_SECRET,
-    { expiresIn: JWT_EXPIRES_IN }
-  );
+  const payload = {
+    id: user.id,
+    username: user.username,
+    role: user.role,
+    name: user.name,
+    permissions: user.permissions || [],
+  };
+
+  return jwt.sign(payload, JWT_SECRET as string, {
+    expiresIn: JWT_EXPIRES_IN
+  } as any);
 };
 
 export const hashPassword = async (password: string): Promise<string> => {

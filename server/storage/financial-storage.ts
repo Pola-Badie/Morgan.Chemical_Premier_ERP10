@@ -10,13 +10,15 @@ import {
 export class FinancialStorage extends BaseStorage implements IFinancialStorage {
   // Account methods
   async getAccounts(type?: string): Promise<Account[]> {
-    let query = this.db.select().from(accounts).where(this.eq(accounts.isActive, true));
-    
     if (type) {
-      query = query.where(this.and(this.eq(accounts.type, type), this.eq(accounts.isActive, true)));
+      return await this.db.select().from(accounts)
+        .where(this.and(this.eq(accounts.type, type), this.eq(accounts.isActive, true)))
+        .orderBy(accounts.code);
     }
-    
-    return await query.orderBy(accounts.code);
+
+    return await this.db.select().from(accounts)
+      .where(this.eq(accounts.isActive, true))
+      .orderBy(accounts.code);
   }
 
   async getAccount(id: number): Promise<Account | undefined> {
@@ -46,7 +48,7 @@ export class FinancialStorage extends BaseStorage implements IFinancialStorage {
   async getJournalEntries(filters?: { dateFrom?: string; dateTo?: string; status?: string }): Promise<JournalEntry[]> {
     let query = this.db.select().from(journalEntries);
     const conditions = [];
-    
+
     if (filters?.dateFrom) {
       conditions.push(this.gte(journalEntries.date, filters.dateFrom));
     }
@@ -56,11 +58,11 @@ export class FinancialStorage extends BaseStorage implements IFinancialStorage {
     if (filters?.status) {
       conditions.push(this.eq(journalEntries.status, filters.status));
     }
-    
+
     if (conditions.length > 0) {
-      query = query.where(this.and(...conditions));
+      query = query.where(this.and(...conditions)) as any;
     }
-    
+
     return await query.orderBy(this.desc(journalEntries.date));
   }
 
@@ -95,7 +97,7 @@ export class FinancialStorage extends BaseStorage implements IFinancialStorage {
   async getCustomerPayments(filters?: { customerId?: number; dateFrom?: string; dateTo?: string }): Promise<CustomerPayment[]> {
     let query = this.db.select().from(customerPayments);
     const conditions = [];
-    
+
     if (filters?.customerId) {
       conditions.push(this.eq(customerPayments.customerId, filters.customerId));
     }
@@ -105,11 +107,11 @@ export class FinancialStorage extends BaseStorage implements IFinancialStorage {
     if (filters?.dateTo) {
       conditions.push(this.lte(customerPayments.paymentDate, filters.dateTo));
     }
-    
+
     if (conditions.length > 0) {
-      query = query.where(this.and(...conditions));
+      query = query.where(this.and(...conditions)) as any;
     }
-    
+
     return await query.orderBy(this.desc(customerPayments.paymentDate));
   }
 
@@ -150,13 +152,13 @@ export class FinancialStorage extends BaseStorage implements IFinancialStorage {
   async getJournalEntriesByPeriod(year: number, month?: number): Promise<JournalEntry[]> {
     let startDate = `${year}-01-01`;
     let endDate = `${year}-12-31`;
-    
+
     if (month) {
       startDate = `${year}-${month.toString().padStart(2, '0')}-01`;
       const lastDay = new Date(year, month, 0).getDate();
       endDate = `${year}-${month.toString().padStart(2, '0')}-${lastDay}`;
     }
-    
+
     return await this.db.select()
       .from(journalEntries)
       .where(
@@ -170,8 +172,8 @@ export class FinancialStorage extends BaseStorage implements IFinancialStorage {
 
   async validateJournalEntryBalance(journalId: number): Promise<boolean> {
     const lines = await this.getJournalLines(journalId);
-    const totalDebits = lines.reduce((sum, line) => sum + (line.debitAmount || 0), 0);
-    const totalCredits = lines.reduce((sum, line) => sum + (line.creditAmount || 0), 0);
+    const totalDebits = lines.reduce((sum, line) => sum + (parseFloat(line.debit || '0') || 0), 0);
+    const totalCredits = lines.reduce((sum, line) => sum + (parseFloat(line.credit || '0') || 0), 0);
     return Math.abs(totalDebits - totalCredits) < 0.01; // Allow for rounding errors
   }
 }

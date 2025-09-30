@@ -5,16 +5,16 @@ import cors from 'cors';
 import compression from 'compression';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
-import { db } from './db.js';
-import routes from './routes-new.js';
-import accountingRoutes from './routes-accounting.js';
-import ordersRoutes from './routes-orders.js';
-import reportsRoutes from './routes-reports.js';
-import customerPaymentsRoutes from './routes-customer-payments.js';
-import etaRoutes from './routes-eta.js';
-import chemicalRoutes from './routes-chemical.js';
-import userRoutes from './routes-user.js';
-import realtimeRoutes from './routes-realtime.js';
+import { db } from './db';
+import routes from './routes-new';
+import accountingRoutes from './routes-accounting';
+import ordersRoutes from './routes-orders';
+import reportsRoutes from './routes-reports';
+import customerPaymentsRoutes from './routes-customer-payments';
+import etaRoutes from './routes-eta';
+import chemicalRoutes from './routes-chemical';
+import userRoutes from './routes-user';
+import realtimeRoutes from './routes-realtime';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -63,12 +63,12 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use('/api', routes);
 accountingRoutes(app);
 ordersRoutes(app);
-reportsRoutes(app);
+app.use('/api', reportsRoutes);
 customerPaymentsRoutes(app);
 etaRoutes(app);
 chemicalRoutes(app);
-userRoutes(app);
-realtimeRoutes(app);
+app.use('/api', userRoutes);
+app.use('/api', realtimeRoutes);
 
 // Serve static files
 app.use(express.static(path.join(__dirname, '../client/dist')));
@@ -100,7 +100,7 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 async function startServer() {
   try {
     // Test database connection
-    await db.select().from('users' as any).limit(1);
+    await db.execute('SELECT 1');
     console.log('✅ Database connection successful');
 
     app.listen(PORT, '0.0.0.0', () => {

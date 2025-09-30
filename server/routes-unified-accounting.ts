@@ -1,9 +1,9 @@
 import { Express, Request, Response } from "express";
 import { db } from "./db";
-import { 
-  sales, 
+import {
+  sales,
   saleItems,
-  expenses, 
+  expenses,
   purchaseOrders,
   purchaseOrderItems,
   customers,
@@ -17,69 +17,111 @@ import {
 import { sql, eq, and, or, gte, lte, desc, count, sum } from "drizzle-orm";
 
 export function registerUnifiedAccountingRoutes(app: Express) {
-  
+
   // =============== UNIFIED INVOICES ENDPOINT ===============
   // This endpoint provides the EXACT same data to both invoice history and accounting modules
   app.get("/api/unified/invoices", async (req: Request, res: Response) => {
     try {
       const { status, limit } = req.query;
-      
-      let query = db
-        .select({
-          id: sales.id,
-          invoiceNumber: sales.invoiceNumber,
-          customerId: sales.customerId,
-          customerName: customers.name,
-          userId: sales.userId,
-          date: sales.date,
-          subtotal: sales.subtotal,
-          discount: sales.discount,
-          discountAmount: sales.discount,
-          tax: sales.tax,
-          taxAmount: sales.tax,
-          grandTotal: sales.grandTotal,
-          totalAmount: sales.grandTotal,
-          paymentMethod: sales.paymentMethod,
-          paymentStatus: sales.paymentStatus,
-          amountPaid: sales.amountPaid,
-          paymentTerms: sales.paymentTerms,
-          notes: sales.notes,
-          etaStatus: sales.etaStatus,
-          etaReference: sales.etaReference,
-          etaUuid: sales.etaUuid,
-          etaSubmissionDate: sales.etaSubmissionDate,
-          etaResponse: sales.etaResponse,
-          etaErrorMessage: sales.etaErrorMessage,
-          createdAt: sales.createdAt,
-          // Customer details for invoice display
-          customerEmail: customers.email,
-          customerPhone: customers.phone,
-          customerAddress: customers.address,
-          customerCity: customers.city,
-          customerState: customers.state,
-          customerZipCode: customers.zipCode,
-          customerCompany: customers.company,
-          customerPosition: customers.position,
-          customerSector: customers.sector,
-          customerTaxNumber: customers.taxNumber
-        })
-        .from(sales)
-        .leftJoin(customers, eq(sales.customerId, customers.id));
-      
+
+      let salesData;
       if (status) {
-        query = query.where(eq(sales.paymentStatus, status as string));
+        salesData = await db
+          .select({
+            id: sales.id,
+            invoiceNumber: sales.invoiceNumber,
+            customerId: sales.customerId,
+            customerName: customers.name,
+            userId: sales.userId,
+            date: sales.date,
+            subtotal: sales.subtotal,
+            discount: sales.discount,
+            discountAmount: sales.discount,
+            tax: sales.tax,
+            taxAmount: sales.tax,
+            grandTotal: sales.grandTotal,
+            totalAmount: sales.grandTotal,
+            paymentMethod: sales.paymentMethod,
+            paymentStatus: sales.paymentStatus,
+            amountPaid: sales.amountPaid,
+            paymentTerms: sales.paymentTerms,
+            notes: sales.notes,
+            etaStatus: sales.etaStatus,
+            etaReference: sales.etaReference,
+            etaUuid: sales.etaUuid,
+            etaSubmissionDate: sales.etaSubmissionDate,
+            etaResponse: sales.etaResponse,
+            etaErrorMessage: sales.etaErrorMessage,
+            createdAt: sales.createdAt,
+            // Customer details for invoice display
+            customerEmail: customers.email,
+            customerPhone: customers.phone,
+            customerAddress: customers.address,
+            customerCity: customers.city,
+            customerState: customers.state,
+            customerZipCode: customers.zipCode,
+            customerCompany: customers.company,
+            customerPosition: customers.position,
+            customerSector: customers.sector,
+            customerTaxNumber: customers.taxNumber
+          })
+          .from(sales)
+          .leftJoin(customers, eq(sales.customerId, customers.id))
+          .where(eq(sales.paymentStatus, status as string))
+          .orderBy(desc(sales.date));
+      } else {
+        salesData = await db
+          .select({
+            id: sales.id,
+            invoiceNumber: sales.invoiceNumber,
+            customerId: sales.customerId,
+            customerName: customers.name,
+            userId: sales.userId,
+            date: sales.date,
+            subtotal: sales.subtotal,
+            discount: sales.discount,
+            discountAmount: sales.discount,
+            tax: sales.tax,
+            taxAmount: sales.tax,
+            grandTotal: sales.grandTotal,
+            totalAmount: sales.grandTotal,
+            paymentMethod: sales.paymentMethod,
+            paymentStatus: sales.paymentStatus,
+            amountPaid: sales.amountPaid,
+            paymentTerms: sales.paymentTerms,
+            notes: sales.notes,
+            etaStatus: sales.etaStatus,
+            etaReference: sales.etaReference,
+            etaUuid: sales.etaUuid,
+            etaSubmissionDate: sales.etaSubmissionDate,
+            etaResponse: sales.etaResponse,
+            etaErrorMessage: sales.etaErrorMessage,
+            createdAt: sales.createdAt,
+            // Customer details for invoice display
+            customerEmail: customers.email,
+            customerPhone: customers.phone,
+            customerAddress: customers.address,
+            customerCity: customers.city,
+            customerState: customers.state,
+            customerZipCode: customers.zipCode,
+            customerCompany: customers.company,
+            customerPosition: customers.position,
+            customerSector: customers.sector,
+            customerTaxNumber: customers.taxNumber
+          })
+          .from(sales)
+          .leftJoin(customers, eq(sales.customerId, customers.id))
+          .orderBy(desc(sales.date));
       }
-      
-      let salesData = await query.orderBy(desc(sales.date));
-      
+
       if (limit) {
         salesData = salesData.slice(0, parseInt(limit as string));
       }
-      
+
       // Optimize: Fetch all items in a single query instead of N+1 queries
       const invoiceIds = salesData.map(invoice => invoice.id);
-      
-      let allItems = [];
+
+      let allItems: any[] = [];
       if (invoiceIds.length > 0) {
         allItems = await db
           .select({
@@ -102,10 +144,10 @@ export function registerUnifiedAccountingRoutes(app: Express) {
           .leftJoin(productCategories, eq(products.categoryId, productCategories.id))
           .where(sql`${saleItems.saleId} IN (${sql.join(invoiceIds.map(id => sql`${id}`), sql`, `)})`);
       }
-      
+
       // Group items by invoice ID for efficient lookup
       const itemsByInvoice = new Map();
-      allItems.forEach(item => {
+      allItems.forEach((item: any) => {
         if (!itemsByInvoice.has(item.saleId)) {
           itemsByInvoice.set(item.saleId, []);
         }
@@ -131,7 +173,7 @@ export function registerUnifiedAccountingRoutes(app: Express) {
           tax_number: invoice.customerTaxNumber
         }
       }));
-      
+
       res.json(invoicesWithItems);
     } catch (error) {
       console.error('Unified invoices error:', error);
@@ -144,36 +186,59 @@ export function registerUnifiedAccountingRoutes(app: Express) {
   app.get("/api/unified/purchase-orders", async (req: Request, res: Response) => {
     try {
       const { status } = req.query;
-      
-      let query = db
-        .select({
-          id: purchaseOrders.id,
-          poNumber: purchaseOrders.poNumber,
-          supplier: suppliers.name,
-          supplierId: purchaseOrders.supplierId,
-          date: purchaseOrders.orderDate,
-          orderDate: purchaseOrders.orderDate,
-          totalAmount: purchaseOrders.totalAmount,
-          status: purchaseOrders.status,
-          notes: purchaseOrders.notes,
-          expectedDeliveryDate: purchaseOrders.expectedDeliveryDate,
-          etaNumber: sql<string>`NULL`,
-          paymentTerms: sql<string>`'Net 30'`,
-          transportationType: purchaseOrders.transportationType,
-          transportationCost: purchaseOrders.transportationCost,
-          transportationNotes: purchaseOrders.transportationNotes,
-          createdAt: purchaseOrders.createdAt,
-          updatedAt: purchaseOrders.updatedAt
-        })
-        .from(purchaseOrders)
-        .leftJoin(suppliers, eq(purchaseOrders.supplierId, suppliers.id));
-      
+
+      let purchaseOrdersData;
       if (status) {
-        query = query.where(eq(purchaseOrders.status, status as string));
+        purchaseOrdersData = await db
+          .select({
+            id: purchaseOrders.id,
+            poNumber: purchaseOrders.poNumber,
+            supplier: suppliers.name,
+            supplierId: purchaseOrders.supplierId,
+            date: purchaseOrders.orderDate,
+            orderDate: purchaseOrders.orderDate,
+            totalAmount: purchaseOrders.totalAmount,
+            status: purchaseOrders.status,
+            notes: purchaseOrders.notes,
+            expectedDeliveryDate: purchaseOrders.expectedDeliveryDate,
+            etaNumber: sql<string>`NULL`,
+            paymentTerms: sql<string>`'Net 30'`,
+            transportationType: purchaseOrders.transportationType,
+            transportationCost: purchaseOrders.transportationCost,
+            transportationNotes: purchaseOrders.transportationNotes,
+            createdAt: purchaseOrders.createdAt,
+            updatedAt: purchaseOrders.updatedAt
+          })
+          .from(purchaseOrders)
+          .leftJoin(suppliers, eq(purchaseOrders.supplierId, suppliers.id))
+          .where(eq(purchaseOrders.status, status as string))
+          .orderBy(desc(purchaseOrders.orderDate));
+      } else {
+        purchaseOrdersData = await db
+          .select({
+            id: purchaseOrders.id,
+            poNumber: purchaseOrders.poNumber,
+            supplier: suppliers.name,
+            supplierId: purchaseOrders.supplierId,
+            date: purchaseOrders.orderDate,
+            orderDate: purchaseOrders.orderDate,
+            totalAmount: purchaseOrders.totalAmount,
+            status: purchaseOrders.status,
+            notes: purchaseOrders.notes,
+            expectedDeliveryDate: purchaseOrders.expectedDeliveryDate,
+            etaNumber: sql<string>`NULL`,
+            paymentTerms: sql<string>`'Net 30'`,
+            transportationType: purchaseOrders.transportationType,
+            transportationCost: purchaseOrders.transportationCost,
+            transportationNotes: purchaseOrders.transportationNotes,
+            createdAt: purchaseOrders.createdAt,
+            updatedAt: purchaseOrders.updatedAt
+          })
+          .from(purchaseOrders)
+          .leftJoin(suppliers, eq(purchaseOrders.supplierId, suppliers.id))
+          .orderBy(desc(purchaseOrders.orderDate));
       }
-      
-      const purchaseOrdersData = await query.orderBy(desc(purchaseOrders.orderDate));
-      
+
       // Add items to each purchase order for complete data synchronization
       const ordersWithItems = await Promise.all(
         purchaseOrdersData.map(async (order) => {
@@ -202,7 +267,7 @@ export function registerUnifiedAccountingRoutes(app: Express) {
           };
         })
       );
-      
+
       res.json(ordersWithItems);
     } catch (error) {
       console.error('Unified purchase orders error:', error);
@@ -215,25 +280,25 @@ export function registerUnifiedAccountingRoutes(app: Express) {
     try {
       const { id } = req.params;
       const { status } = req.body;
-      
+
       // Validate status
       if (!['sent', 'received', 'rejected'].includes(status)) {
         return res.status(400).json({ error: 'Invalid status. Must be: sent, received, or rejected' });
       }
-      
+
       // Update purchase order status
       const updatedOrder = await db
         .update(purchaseOrders)
         .set({ status, updatedAt: new Date() })
         .where(eq(purchaseOrders.id, parseInt(id)))
         .returning();
-      
+
       if (updatedOrder.length === 0) {
         return res.status(404).json({ error: 'Purchase order not found' });
       }
-      
-      res.json({ 
-        success: true, 
+
+      res.json({
+        success: true,
         message: `Purchase order status updated to ${status}`,
         order: updatedOrder[0]
       });
@@ -242,14 +307,14 @@ export function registerUnifiedAccountingRoutes(app: Express) {
       res.status(500).json({ error: 'Failed to update purchase order status' });
     }
   });
-  
+
   // =============== UNIFIED ACCOUNTING DASHBOARD ===============
   app.get("/api/accounting/unified-dashboard", async (_req: Request, res: Response) => {
     try {
       const now = new Date();
       const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
       const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-      
+
       // Run all queries in parallel for better performance
       const [
         monthlyRevenue,
@@ -268,39 +333,39 @@ export function registerUnifiedAccountingRoutes(app: Express) {
               lte(sales.date, lastDayOfMonth)
             )
           ),
-        
+
         // 2. Get Expenses (This Month)  
         db.select({ total: sql<string>`COALESCE(SUM(CAST(amount AS DECIMAL)), 0)` })
           .from(expenses)
           .where(
             and(
-              gte(expenses.date, firstDayOfMonth),
-              lte(expenses.date, lastDayOfMonth)
+              gte(expenses.date, firstDayOfMonth.toISOString().split('T')[0]),
+              lte(expenses.date, lastDayOfMonth.toISOString().split('T')[0])
             )
           ),
-        
+
         // 3. Get Total Journal Entries Count
         db.select({ count: sql<number>`COUNT(*)` }).from(journalEntries),
-        
+
         // 4. Get Total Accounts Count
         db.select({ count: sql<number>`COUNT(*)` })
           .from(accounts)
           .where(eq(accounts.isActive, true)),
-        
+
         // 5. Get Pending Purchases Count
         db.select({ count: sql<number>`COUNT(*)` })
           .from(purchaseOrders)
           .where(eq(purchaseOrders.status, 'sent')),
-        
+
         // 6. Get Outstanding Invoices
         db.select({ total: sql<string>`COALESCE(SUM(CAST(grand_total AS DECIMAL)), 0)` })
           .from(sales)
           .where(eq(sales.paymentStatus, 'pending'))
       ]);
-      
+
       const revenueThisMonth = parseFloat(monthlyRevenue[0]?.total || '0');
       const expensesThisMonth = parseFloat(monthlyExpenses[0]?.total || '0');
-      
+
       const dashboardData = {
         revenueThisMonth,
         expensesThisMonth,
@@ -310,14 +375,14 @@ export function registerUnifiedAccountingRoutes(app: Express) {
         outstandingInvoices: parseFloat(outstandingInvoices[0]?.total || '0'),
         netProfit: revenueThisMonth - expensesThisMonth
       };
-      
+
       res.json(dashboardData);
     } catch (error) {
       console.error('Unified accounting dashboard error:', error);
       res.status(500).json({ error: 'Failed to fetch unified dashboard data' });
     }
   });
-  
+
   // =============== EXPENSES SYNC ===============
   // This endpoint returns the SAME data as the main expenses module
   app.get("/api/accounting/expenses", async (req: Request, res: Response) => {
@@ -326,14 +391,14 @@ export function registerUnifiedAccountingRoutes(app: Express) {
         .select()
         .from(expenses)
         .orderBy(desc(expenses.date));
-      
+
       res.json(expensesList);
     } catch (error) {
       console.error('Accounting expenses sync error:', error);
       res.status(500).json({ error: 'Failed to fetch expenses for accounting' });
     }
   });
-  
+
   // =============== PENDING PURCHASES FROM PROCUREMENT ===============
   // Now using the unified endpoint for 100% data consistency
   app.get("/api/accounting/pending-purchases", async (req: Request, res: Response) => {
@@ -358,14 +423,14 @@ export function registerUnifiedAccountingRoutes(app: Express) {
         .leftJoin(suppliers, eq(purchaseOrders.supplierId, suppliers.id))
         .where(eq(purchaseOrders.status, 'sent'))
         .orderBy(desc(purchaseOrders.orderDate));
-      
+
       res.json(pendingPurchases);
     } catch (error) {
       console.error('Pending purchases error:', error);
       res.status(500).json({ error: 'Failed to fetch pending purchases' });
     }
   });
-  
+
   // =============== APPROVED PURCHASES FROM PROCUREMENT ===============
   app.get("/api/accounting/purchases", async (_req: Request, res: Response) => {
     try {
@@ -387,14 +452,14 @@ export function registerUnifiedAccountingRoutes(app: Express) {
         .leftJoin(suppliers, eq(purchaseOrders.supplierId, suppliers.id))
         .where(eq(purchaseOrders.status, 'received')) // Changed to received orders
         .orderBy(desc(purchaseOrders.orderDate)); // Fixed: Use orderDate
-      
+
       res.json(approvedPurchases);
     } catch (error) {
       console.error('Approved purchases error:', error);
       res.status(500).json({ error: 'Failed to fetch approved purchases' });
     }
   });
-  
+
   // =============== OUTSTANDING INVOICES ===============
   app.get("/api/accounting/invoices-due", async (_req: Request, res: Response) => {
     try {
@@ -419,53 +484,59 @@ export function registerUnifiedAccountingRoutes(app: Express) {
           )
         )
         .orderBy(desc(sales.date));
-      
+
       // Add calculated due date (30 days from invoice date) and days overdue
       const invoicesWithDueDate = outstandingInvoices.map(invoice => {
         const invoiceDate = new Date(invoice.date);
         const dueDate = new Date(invoiceDate);
         dueDate.setDate(dueDate.getDate() + 30); // 30 days payment terms
-        
+
         const today = new Date();
-        const daysOverdue = today > dueDate ? 
-          Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24)) : 
+        const daysOverdue = today > dueDate ?
+          Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24)) :
           0;
-        
+
         return {
           ...invoice,
           dueDate: dueDate.toISOString().split('T')[0],
           daysOverdue
         };
       });
-      
+
       res.json(invoicesWithDueDate);
     } catch (error) {
       console.error('Outstanding invoices error:', error);
       res.status(500).json({ error: 'Failed to fetch outstanding invoices' });
     }
   });
-  
+
   // =============== REVENUE FROM INVOICES ===============
   app.get("/api/accounting/revenue", async (req: Request, res: Response) => {
     try {
       const { startDate, endDate } = req.query;
-      
-      let query = db.select({
-        total: sum(sales.grandTotal),
-        count: count()
-      }).from(sales);
-      
+
+      let revenue;
       if (startDate && endDate) {
-        query = query.where(
-          and(
-            gte(sales.date, new Date(startDate as string)),
-            lte(sales.date, new Date(endDate as string))
-          )
-        );
+        const [result] = await db.select({
+          total: sum(sales.grandTotal),
+          count: count()
+        })
+          .from(sales)
+          .where(
+            and(
+              gte(sales.date, new Date(startDate as string)),
+              lte(sales.date, new Date(endDate as string))
+            )
+          );
+        revenue = result;
+      } else {
+        const [result] = await db.select({
+          total: sum(sales.grandTotal),
+          count: count()
+        }).from(sales);
+        revenue = result;
       }
-      
-      const [revenue] = await query;
-      
+
       res.json({
         totalRevenue: parseFloat(revenue.total || '0'),
         invoiceCount: revenue.count || 0
@@ -475,12 +546,12 @@ export function registerUnifiedAccountingRoutes(app: Express) {
       res.status(500).json({ error: 'Failed to calculate revenue' });
     }
   });
-  
+
   // =============== PURCHASE APPROVAL WORKFLOW ===============
   app.patch("/api/accounting/approve-purchase/:id", async (req: Request, res: Response) => {
     try {
       const purchaseId = parseInt(req.params.id);
-      
+
       // Update purchase order status
       const [updatedPurchase] = await db
         .update(purchaseOrders)
@@ -490,35 +561,34 @@ export function registerUnifiedAccountingRoutes(app: Express) {
         })
         .where(eq(purchaseOrders.id, purchaseId))
         .returning();
-      
+
       if (!updatedPurchase) {
         return res.status(404).json({ error: 'Purchase order not found' });
       }
-      
+
       // Create journal entry for the approved purchase
       const [supplier] = await db
         .select()
         .from(suppliers)
         .where(eq(suppliers.id, updatedPurchase.supplierId));
-      
+
       // Create journal entry
       const journalCount = await db.select({ count: count() }).from(journalEntries);
       const entryNumber = `JE-${String(journalCount[0].count + 1).padStart(6, '0')}`;
-      
+
       await db.insert(journalEntries).values({
-        entryNumber,
-        date: new Date(),
-        description: `Purchase Order ${updatedPurchase.poNumber} - ${supplier?.name || 'Supplier'}`,
+        entryNumber: entryNumber,
+        date: new Date().toISOString().split('T')[0],
         reference: updatedPurchase.poNumber,
-        type: 'purchase',
+        memo: `Purchase Order ${updatedPurchase.poNumber} - ${supplier?.name || 'Supplier'}`,
         status: 'posted',
-        createdBy: req.body.userId || 1,
+        userId: req.body.userId || 1,
         totalDebit: updatedPurchase.totalAmount.toString(),
         totalCredit: updatedPurchase.totalAmount.toString(),
         sourceType: 'purchase_order',
         sourceId: updatedPurchase.id
       });
-      
+
       res.json({
         message: 'Purchase order approved successfully',
         purchaseOrder: updatedPurchase
@@ -528,7 +598,7 @@ export function registerUnifiedAccountingRoutes(app: Express) {
       res.status(500).json({ error: 'Failed to approve purchase' });
     }
   });
-  
+
   // =============== REAL-TIME SYNC STATUS ===============
   app.get("/api/accounting/sync-status", async (_req: Request, res: Response) => {
     try {
@@ -537,7 +607,7 @@ export function registerUnifiedAccountingRoutes(app: Express) {
       const [invoicesCount] = await db.select({ count: count() }).from(sales);
       const [purchasesCount] = await db.select({ count: count() }).from(purchaseOrders);
       const [journalEntriesCount] = await db.select({ count: count() }).from(journalEntries);
-      
+
       res.json({
         modules: {
           expenses: {
@@ -566,9 +636,9 @@ export function registerUnifiedAccountingRoutes(app: Express) {
       });
     } catch (error) {
       console.error('Sync status error:', error);
-      res.status(500).json({ 
+      res.status(500).json({
         overallStatus: 'error',
-        error: 'Failed to check sync status' 
+        error: 'Failed to check sync status'
       });
     }
   });

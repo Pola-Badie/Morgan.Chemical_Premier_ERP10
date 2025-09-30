@@ -1243,7 +1243,12 @@ export function registerAccountingRoutes(app: Express) {
           }
         ];
 
-        await db.insert(accountingPeriods).values(samplePeriods);
+        await db.insert(accountingPeriods).values(samplePeriods.map(period => ({
+          periodName: period.period_name,
+          startDate: period.start_date,
+          endDate: period.end_date,
+          status: period.status
+        })));
         
         periods = await db
           .select()
@@ -1262,14 +1267,17 @@ export function registerAccountingRoutes(app: Express) {
     try {
       const validatedData = insertAccountingPeriodSchema.parse(req.body);
       
-      // Check for overlapping periods
+      // Check for overlapping periods  
+      const startDateStr = new Date(validatedData.startDate).toISOString().split('T')[0];
+      const endDateStr = new Date(validatedData.endDate).toISOString().split('T')[0];
+      
       const overlappingPeriods = await db
         .select()
         .from(accountingPeriods)
         .where(
           and(
-            lte(accountingPeriods.startDate, new Date(validatedData.endDate)),
-            gte(accountingPeriods.endDate, new Date(validatedData.startDate))
+            lte(accountingPeriods.startDate, endDateStr),
+            gte(accountingPeriods.endDate, startDateStr)
           )
         );
       
@@ -1284,8 +1292,8 @@ export function registerAccountingRoutes(app: Express) {
         .insert(accountingPeriods)
         .values({
           ...validatedData,
-          startDate: new Date(validatedData.startDate),
-          endDate: new Date(validatedData.endDate)
+          startDate: startDateStr,
+          endDate: endDateStr
         })
         .returning();
       
@@ -1330,13 +1338,18 @@ export function registerAccountingRoutes(app: Express) {
     try {
       const { customerId } = req.query;
       
-      let query = db
-        .select()
-        .from(customerPayments)
-        .orderBy(desc(customerPayments.paymentDate));
-      
+      let query;
       if (customerId) {
-        query = query.where(eq(customerPayments.customerId, parseInt(customerId as string)));
+        query = db
+          .select()
+          .from(customerPayments)
+          .where(eq(customerPayments.customerId, parseInt(customerId as string)))
+          .orderBy(desc(customerPayments.paymentDate));
+      } else {
+        query = db
+          .select()
+          .from(customerPayments)
+          .orderBy(desc(customerPayments.paymentDate));
       }
       
       const payments = await query;
@@ -1430,10 +1443,13 @@ export function registerAccountingRoutes(app: Express) {
           }
           
           // Get customer name
-          const [customer] = await db
-            .select({ name: customers.name })
-            .from(customers)
-            .where(eq(customers.id, invoice.customerId));
+          let customer = null;
+          if (invoice.customerId) {
+            [customer] = await db
+              .select({ name: customers.name })
+              .from(customers)
+              .where(eq(customers.id, invoice.customerId));
+          }
           
           return {
             ...invoice,
@@ -1464,13 +1480,14 @@ export function registerAccountingRoutes(app: Express) {
       const paymentNumber = `PAY-${(paymentCount[0]?.count || 0) + 1}`.padStart(8, '0');
       
       // Create the payment
+      const paymentDateStr = new Date(paymentDate).toISOString().split('T')[0];
       const [payment] = await db
         .insert(customerPayments)
         .values({
           paymentNumber,
           customerId,
           amount,
-          paymentDate: new Date(paymentDate),
+          paymentDate: paymentDateStr,
           paymentMethod,
           reference,
           notes,

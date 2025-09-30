@@ -189,17 +189,17 @@ export class DatabaseStorage implements IStorage {
     const conditions = [];
 
     if (query) {
-      conditions.push(like(sales.referenceNumber, `%${query}%`));
+      conditions.push(like(sales.invoiceNumber, `%${query}%`));
     }
     if (customerId) {
       conditions.push(eq(sales.customerId, customerId));
     }
     if (status) {
-      conditions.push(eq(sales.status, status));
+      conditions.push(eq(sales.paymentStatus, status));
     }
 
     if (conditions.length > 0) {
-      dbQuery = dbQuery.where(and(...conditions));
+      dbQuery = dbQuery.where(and(...conditions)) as any;
     }
 
     return await dbQuery.orderBy(desc(sales.createdAt));
@@ -226,7 +226,7 @@ export class DatabaseStorage implements IStorage {
 
   async updateSale(id: number, data: Partial<Sale>): Promise<Sale | undefined> {
     const [updated] = await db.update(sales)
-      .set({ ...data, updatedAt: new Date() })
+      .set({ ...data })
       .where(eq(sales.id, id))
       .returning();
     return updated;
@@ -308,7 +308,6 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getStockMovements(filters?: { productId?: number; dateFrom?: string; dateTo?: string }): Promise<StockMovement[]> {
-    let query = db.select().from(stockMovements);
     const conditions = [];
 
     if (filters?.productId) {
@@ -322,10 +321,12 @@ export class DatabaseStorage implements IStorage {
     }
 
     if (conditions.length > 0) {
-      query = query.where(and(...conditions));
+      return await db.select().from(stockMovements)
+        .where(and(...conditions))
+        .orderBy(desc(stockMovements.movementDate));
     }
 
-    return await query.orderBy(desc(stockMovements.movementDate));
+    return await db.select().from(stockMovements).orderBy(desc(stockMovements.movementDate));
   }
 
   async getStockMovement(id: number): Promise<StockMovement | undefined> {
@@ -352,7 +353,6 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getInventoryAdjustments(filters?: { productId?: number; dateFrom?: string; dateTo?: string }): Promise<InventoryAdjustment[]> {
-    let query = db.select().from(inventoryAdjustments);
     const conditions = [];
 
     if (filters?.productId) {
@@ -366,10 +366,12 @@ export class DatabaseStorage implements IStorage {
     }
 
     if (conditions.length > 0) {
-      query = query.where(and(...conditions));
+      return await db.select().from(inventoryAdjustments)
+        .where(and(...conditions))
+        .orderBy(desc(inventoryAdjustments.adjustmentDate));
     }
 
-    return await query.orderBy(desc(inventoryAdjustments.adjustmentDate));
+    return await db.select().from(inventoryAdjustments).orderBy(desc(inventoryAdjustments.adjustmentDate));
   }
 
   async getInventoryAdjustment(id: number): Promise<InventoryAdjustment | undefined> {
@@ -430,7 +432,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getInventoryTransactions(): Promise<InventoryTransaction[]> {
-    return await db.select().from(inventoryTransactions).orderBy(desc(inventoryTransactions.transactionDate));
+    return await db.select().from(inventoryTransactions).orderBy(desc(inventoryTransactions.date));
   }
 
   async createInventoryTransaction(transaction: Partial<InventoryTransaction>): Promise<InventoryTransaction> {
@@ -448,7 +450,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getBackups(): Promise<Backup[]> {
-    return await db.select().from(backups).orderBy(desc(backups.createdAt));
+    return await db.select().from(backups).orderBy(desc(backups.timestamp));
   }
 
   async getLatestBackup(): Promise<Backup | undefined> {
@@ -762,11 +764,11 @@ export class DatabaseStorage implements IStorage {
       conditions.push(eq(quotations.status, status));
     }
     if (date) {
-      conditions.push(eq(quotations.quotationDate, date));
+      conditions.push(eq(quotations.validUntil, date));
     }
 
     if (conditions.length > 0) {
-      dbQuery = dbQuery.where(and(...conditions));
+      dbQuery = dbQuery.where(and(...conditions)) as any;
     }
 
     return await dbQuery.orderBy(desc(quotations.createdAt));
@@ -782,7 +784,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createQuotation(quotation: InsertQuotation): Promise<Quotation> {
-    const [newQuotation] = await db.insert(quotations).values(quotation).returning();
+    const [newQuotation] = await db.insert(quotations).values({
+      ...quotation,
+      totalAmount: quotation.grandTotal
+    }).returning();
     return newQuotation;
   }
 
@@ -824,7 +829,7 @@ export class DatabaseStorage implements IStorage {
     }
 
     if (conditions.length > 0) {
-      dbQuery = dbQuery.where(and(...conditions));
+      dbQuery = dbQuery.where(and(...conditions)) as any;
     }
 
     return await dbQuery.orderBy(desc(orders.createdAt));
@@ -879,6 +884,140 @@ export class DatabaseStorage implements IStorage {
   async deleteOrderFees(orderId: number): Promise<boolean> {
     const result = await db.delete(orderFees).where(eq(orderFees.orderId, orderId)).returning();
     return result.length > 0;
+  }
+
+  // Production Management - Stub implementations
+  async getProductionOrders(filters?: any): Promise<any[]> {
+    throw new Error("Production orders not implemented yet");
+  }
+
+  async getProductionOrder(id: number): Promise<any> {
+    throw new Error("Production orders not implemented yet");
+  }
+
+  async getProductionMaterials(id: number): Promise<any[]> {
+    throw new Error("Production materials not implemented yet");
+  }
+
+  async createProductionOrder(data: any): Promise<any> {
+    throw new Error("Production orders not implemented yet");
+  }
+
+  async updateProductionOrder(id: number, data: any): Promise<any> {
+    throw new Error("Production orders not implemented yet");
+  }
+
+  async deleteProductionOrder(id: number): Promise<boolean> {
+    throw new Error("Production orders not implemented yet");
+  }
+
+  // Tax Management - Stub implementations
+  async getTaxRates(active?: boolean): Promise<any[]> {
+    throw new Error("Tax rates not implemented yet");
+  }
+
+  async createTaxRate(data: any): Promise<any> {
+    throw new Error("Tax rates not implemented yet");
+  }
+
+  // Currency Management - Stub implementations
+  async getCurrencies(active?: boolean): Promise<any[]> {
+    throw new Error("Currencies not implemented yet");
+  }
+
+  async getBaseCurrency(): Promise<any> {
+    throw new Error("Base currency not implemented yet");
+  }
+
+  async createCurrency(data: any): Promise<any> {
+    throw new Error("Currencies not implemented yet");
+  }
+
+  // Bank Account Management - Stub implementations
+  async getBankAccounts(active?: boolean): Promise<any[]> {
+    throw new Error("Bank accounts not implemented yet");
+  }
+
+  async createBankAccount(data: any): Promise<any> {
+    throw new Error("Bank accounts not implemented yet");
+  }
+
+  // Budget Management - Stub implementations
+  async getBudgets(year?: number): Promise<any[]> {
+    throw new Error("Budgets not implemented yet");
+  }
+
+  async getBudgetCategories(budgetId: number): Promise<any[]> {
+    throw new Error("Budget categories not implemented yet");
+  }
+
+  async createBudget(data: any): Promise<any> {
+    throw new Error("Budgets not implemented yet");
+  }
+
+  // Asset Management - Stub implementations
+  async getAssets(category?: string, status?: string): Promise<any[]> {
+    throw new Error("Assets not implemented yet");
+  }
+
+  async getMaintenanceRecords(assetId: number): Promise<any[]> {
+    throw new Error("Maintenance records not implemented yet");
+  }
+
+  async createAsset(data: any): Promise<any> {
+    throw new Error("Assets not implemented yet");
+  }
+
+  // Department Management - Stub implementations
+  async getDepartments(active?: boolean): Promise<any[]> {
+    throw new Error("Departments not implemented yet");
+  }
+
+  async createDepartment(data: any): Promise<any> {
+    throw new Error("Departments not implemented yet");
+  }
+
+  // Employee Management - Stub implementations
+  async getEmployeeProfiles(departmentId?: number): Promise<any[]> {
+    throw new Error("Employee profiles not implemented yet");
+  }
+
+  async getEmployeeByUserId(userId: number): Promise<any> {
+    throw new Error("Employee profiles not implemented yet");
+  }
+
+  async createEmployeeProfile(data: any): Promise<any> {
+    throw new Error("Employee profiles not implemented yet");
+  }
+
+  // Document Management - Stub implementations
+  async getDocuments(entityType?: string, entityId?: number): Promise<any[]> {
+    throw new Error("Documents not implemented yet");
+  }
+
+  async getDocumentTypes(): Promise<any[]> {
+    throw new Error("Document types not implemented yet");
+  }
+
+  async createDocument(data: any): Promise<any> {
+    throw new Error("Documents not implemented yet");
+  }
+
+  // Notification Management - Stub implementations
+  async getNotifications(userId?: number, unreadOnly?: boolean): Promise<any[]> {
+    throw new Error("Notifications not implemented yet");
+  }
+
+  async getNotificationTemplates(): Promise<any[]> {
+    throw new Error("Notification templates not implemented yet");
+  }
+
+  async createNotification(data: any): Promise<any> {
+    throw new Error("Notifications not implemented yet");
+  }
+
+  async markNotificationAsRead(notificationId: number): Promise<boolean> {
+    throw new Error("Notifications not implemented yet");
   }
 }
 

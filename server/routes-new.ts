@@ -4,8 +4,8 @@ import { db, pool } from "./db";
 import { z } from "zod";
 import { registerChemicalRoutes } from "./routes-chemical";
 import { registerETARoutes } from "./routes-eta";
-import { 
-  users, products, productCategories, customers, suppliers, sales, 
+import {
+  users, products, productCategories, customers, suppliers, sales,
   saleItems, purchaseOrders, purchaseOrderItems, backups, backupSettings,
   systemPreferences, rolePermissions, loginLogs, userPermissions,
   journalEntries, journalEntryLines, accounts, expenses, expenseCategories,
@@ -77,10 +77,10 @@ export async function registerRoutes(app: Express): Promise<void> {
     console.log('🔥 BULK IMPORT (DIRECT ROUTE) REQUEST RECEIVED!');
     console.log('Request body type:', typeof req.body);
     console.log('Request body preview:', JSON.stringify(req.body).substring(0, 200));
-    
+
     try {
       const { type, data, warehouse } = req.body;
-      
+
       if (!type || !data || !Array.isArray(data)) {
         console.log('❌ Invalid request format');
         return res.status(400).json({ error: 'Type and data array required' });
@@ -90,14 +90,14 @@ export async function registerRoutes(app: Express): Promise<void> {
       if (warehouse) {
         console.log(`🏭 Target warehouse: ${warehouse}`);
       }
-      
+
       let imported = 0;
       let failed = 0;
       const errors: string[] = [];
-      
+
       for (let i = 0; i < data.length; i++) {
         const row = data[i];
-        
+
         try {
           // Process product import directly here
           if (type === 'products') {
@@ -107,7 +107,7 @@ export async function registerRoutes(app: Express): Promise<void> {
               try {
                 // First try to parse as number (warehouse ID)
                 const parsedId = parseInt(warehouse);
-                
+
                 if (!isNaN(parsedId) && parsedId > 0) {
                   // It's a valid ID, fetch by ID
                   const warehouseData = await db.select().from(warehouses).where(eq(warehouses.id, parsedId)).limit(1);
@@ -216,11 +216,11 @@ export async function registerRoutes(app: Express): Promise<void> {
           console.error(`❌ Failed to import row ${i + 1}:`, error);
         }
       }
-      
+
       const result = { success: true, imported, failed, errors };
       console.log('🎉 Import completed:', result);
       return res.json(result);
-      
+
     } catch (error) {
       console.error('❌ JSON import failed:', error);
       return res.status(500).json({ error: 'Import failed', details: error instanceof Error ? error.message : 'Unknown error' });
@@ -234,7 +234,7 @@ export async function registerRoutes(app: Express): Promise<void> {
     fileFilter: (_req: any, file: any, cb: any) => {
       const validMimeTypes = ['text/csv', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'];
       const validExtensions = ['.csv', '.xls', '.xlsx'];
-      
+
       if (validMimeTypes.includes(file.mimetype) || validExtensions.some(ext => file.originalname.toLowerCase().endsWith(ext))) {
         cb(null, true);
       } else {
@@ -247,7 +247,7 @@ export async function registerRoutes(app: Express): Promise<void> {
     console.log('🔥 BULK ROUTE HIT: POST /import');
     console.log('🔥 Request URL:', req.url);
     console.log('🔥 Original URL:', req.originalUrl);
-    
+
     try {
       const { type, warehouse } = req.body;
       const file = req.file;
@@ -269,7 +269,7 @@ export async function registerRoutes(app: Express): Promise<void> {
       // Parse CSV data
       const csvData = file.buffer.toString();
       const lines = csvData.split('\n').filter(line => line.trim());
-      
+
       if (lines.length < 2) {
         return res.status(400).json({ error: 'CSV file must have header and at least one data row' });
       }
@@ -295,7 +295,7 @@ export async function registerRoutes(app: Express): Promise<void> {
           try {
             // First try to parse as number (warehouse ID)
             const parsedId = parseInt(warehouse);
-            
+
             if (!isNaN(parsedId) && parsedId > 0) {
               // It's a valid ID, fetch by ID
               const warehouseData = await db.select().from(warehouses).where(eq(warehouses.id, parsedId)).limit(1);
@@ -364,7 +364,7 @@ export async function registerRoutes(app: Express): Promise<void> {
                 status: productData.status as 'active' | 'inactive',
                 categoryId: productData.categoryId,
                 productType: productData.productType as 'finished' | 'raw' | 'packaging',
-                expiryDate: productData.expiryDate ? new Date(productData.expiryDate) : null,
+                expiryDate: productData.expiryDate ? new Date(productData.expiryDate).toISOString().split('T')[0] : null,
                 createdAt: new Date(),
                 updatedAt: new Date()
               }).onConflictDoUpdate({
@@ -382,7 +382,7 @@ export async function registerRoutes(app: Express): Promise<void> {
                   status: productData.status as 'active' | 'inactive',
                   categoryId: productData.categoryId,
                   productType: productData.productType as 'finished' | 'raw' | 'packaging',
-                  expiryDate: productData.expiryDate ? new Date(productData.expiryDate) : null,
+                  expiryDate: productData.expiryDate ? new Date(productData.expiryDate).toISOString().split('T')[0] : null,
                   updatedAt: new Date()
                 }
               });
@@ -453,7 +453,7 @@ export async function registerRoutes(app: Express): Promise<void> {
                 updatedAt: new Date()
               }
             });
-            
+
             imported++;
             console.log(`✅ Imported supplier row ${i + 1}: ${supplierData.name}`);
           } catch (error) {
@@ -470,7 +470,7 @@ export async function registerRoutes(app: Express): Promise<void> {
       }
 
       return res.status(400).json({ error: 'Unsupported import type' });
-      
+
     } catch (error) {
       console.error('❌ CSV import failed:', error);
       return res.status(500).json({ error: 'Import failed', details: error instanceof Error ? error.message : 'Unknown error' });
@@ -508,14 +508,14 @@ export async function registerRoutes(app: Express): Promise<void> {
 
       // Try cache first
       let permissions = permissionCache.getUserPermissions(userId);
-      
+
       if (!permissions) {
         // Cache miss - fetch from database
         permissions = await db
           .select()
           .from(userPermissions)
           .where(eq(userPermissions.userId, userId));
-        
+
         // Store in cache for next time
         permissionCache.setUserPermissions(userId, permissions);
       }
@@ -634,13 +634,13 @@ export async function registerRoutes(app: Express): Promise<void> {
   app.get("/api/customers/:id/profile", async (req: Request, res: Response) => {
     try {
       const customerId = parseInt(req.params.id);
-      
+
       // Get customer basic info
       const [customer] = await db.select()
         .from(customers)
         .where(eq(customers.id, customerId))
         .limit(1);
-      
+
       if (!customer) {
         return res.status(404).json({ message: "Customer not found" });
       }
@@ -658,16 +658,16 @@ export async function registerRoutes(app: Express): Promise<void> {
           const [itemCountResult] = await db.select({
             count: count(saleItems.id)
           })
-          .from(saleItems)
-          .where(eq(saleItems.saleId, sale.id));
-          
+            .from(saleItems)
+            .where(eq(saleItems.saleId, sale.id));
+
           return {
             id: sale.id,
             date: sale.date,
             totalAmount: sale.totalAmount,
             paymentStatus: sale.paymentStatus,
             itemCount: Number(itemCountResult?.count) || 0,
-            etaInvoiceNumber: sale.etaInvoiceNumber
+            etaInvoiceNumber: sale.invoiceNumber
           };
         })
       );
@@ -678,23 +678,23 @@ export async function registerRoutes(app: Express): Promise<void> {
         totalOrders: count(sales.id),
         lastOrderDate: max(sales.date)
       })
-      .from(sales)
-      .where(eq(sales.customerId, customerId));
+        .from(sales)
+        .where(eq(sales.customerId, customerId));
 
       // Get paid and pending invoice counts
       const invoiceStats = await db.select({
         status: sales.paymentStatus,
         count: count(sales.id)
       })
-      .from(sales)
-      .where(eq(sales.customerId, customerId))
-      .groupBy(sales.paymentStatus);
+        .from(sales)
+        .where(eq(sales.customerId, customerId))
+        .groupBy(sales.paymentStatus);
 
       const paidInvoices = invoiceStats.find(s => s.status === 'paid')?.count || 0;
       const pendingInvoices = invoiceStats.find(s => s.status === 'pending')?.count || 0;
 
       // Calculate average order value
-      const avgOrderValue = stats[0].totalPurchases && stats[0].totalOrders 
+      const avgOrderValue = stats[0].totalPurchases && stats[0].totalOrders
         ? Number(stats[0].totalPurchases) / Number(stats[0].totalOrders)
         : 0;
 
@@ -889,36 +889,36 @@ export async function registerRoutes(app: Express): Promise<void> {
   // Helper function to get default permissions by role
   function getDefaultPermissionsByRole(role: string) {
     const allModules = [
-      'dashboard', 'inventory', 'expenses', 'accounting', 'createInvoice', 
-      'invoiceHistory', 'createQuotation', 'quotationHistory', 'suppliers', 
-      'procurement', 'customers', 'orderManagement', 'ordersHistory', 
+      'dashboard', 'inventory', 'expenses', 'accounting', 'createInvoice',
+      'invoiceHistory', 'createQuotation', 'quotationHistory', 'suppliers',
+      'procurement', 'customers', 'orderManagement', 'ordersHistory',
       'reports', 'userManagement', 'systemPreferences', 'label'
     ];
 
     switch (role) {
       case 'admin':
         return allModules.map(module => ({ module, access: true }));
-      
+
       case 'manager':
         return allModules
           .filter(module => module !== 'systemPreferences')
           .map(module => ({ module, access: true }));
-      
+
       case 'accountant':
-        return ['dashboard', 'accounting', 'createInvoice', 'invoiceHistory', 
-                'expenses', 'reports', 'customers']
+        return ['dashboard', 'accounting', 'createInvoice', 'invoiceHistory',
+          'expenses', 'reports', 'customers']
           .map(module => ({ module, access: true }));
-      
+
       case 'inventory_manager':
-        return ['dashboard', 'inventory', 'suppliers', 'procurement', 
-                'reports', 'label']
+        return ['dashboard', 'inventory', 'suppliers', 'procurement',
+          'reports', 'label']
           .map(module => ({ module, access: true }));
-      
+
       case 'sales_rep':
         return ['dashboard', 'customers', 'createInvoice', 'invoiceHistory',
-                'createQuotation', 'quotationHistory', 'orderManagement', 'ordersHistory']
+          'createQuotation', 'quotationHistory', 'orderManagement', 'ordersHistory']
           .map(module => ({ module, access: true }));
-      
+
       default: // staff
         return ['dashboard'].map(module => ({ module, access: true }));
     }
@@ -994,7 +994,7 @@ export async function registerRoutes(app: Express): Promise<void> {
 
       // Update permissions based on new role
       await db.delete(userPermissions).where(eq(userPermissions.userId, id));
-      
+
       const defaultPermissions = getDefaultPermissionsByRole(role);
       for (const permission of defaultPermissions) {
         await db.insert(userPermissions).values({
@@ -1108,7 +1108,7 @@ export async function registerRoutes(app: Express): Promise<void> {
       });
 
       // Create default permissions based on role
-      const defaultPermissions = getDefaultPermissionsByRole(validatedData.role);
+      const defaultPermissions = getDefaultPermissionsByRole(validatedData.role || 'staff');
       for (const permission of defaultPermissions) {
         await db.insert(userPermissions).values({
           userId: newUser.id,
@@ -1383,32 +1383,32 @@ export async function registerRoutes(app: Express): Promise<void> {
   app.get("/api/dashboard/summary", async (_req: Request, res: Response) => {
     try {
       console.log('🔥 Fetching REAL dashboard data from database...');
-      
+
       // Get REAL customer count
       const allCustomers = await db.select().from(customers);
       const totalCustomers = allCustomers.length;
-      
+
       // Calculate new customers this month
       const oneMonthAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
       const newCustomers = allCustomers.filter(c => new Date(c.createdAt) >= oneMonthAgo).length;
-      
+
       // Get REAL sales data  
       const allSales = await db.select().from(sales);
       const totalRevenue = allSales.reduce((sum, sale) => sum + parseFloat(sale.grandTotal || '0'), 0);
-      
+
       // Calculate today's sales
       const today = new Date();
       const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
       const todaySales = allSales
         .filter(sale => new Date(sale.date) >= todayStart)
         .reduce((sum, sale) => sum + parseFloat(sale.grandTotal || '0'), 0);
-      
+
       // Calculate this month's sales
       const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
       const monthSales = allSales
         .filter(sale => new Date(sale.date) >= monthStart)
         .reduce((sum, sale) => sum + parseFloat(sale.grandTotal || '0'), 0);
-      
+
       // Calculate REAL total tax collected from ALL invoices (lifetime)
       const totalTaxAllInvoices = allSales
         .reduce((sum, sale) => {
@@ -1421,14 +1421,14 @@ export async function registerRoutes(app: Express): Promise<void> {
       // Calculate month-over-month growth percentages
       const twoMonthsAgo = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000);
       const lastMonthStart = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-      
+
       // Customer growth calculation
       const customersLastMonth = allCustomers.filter(c => {
         const createdDate = new Date(c.createdAt);
         return createdDate >= twoMonthsAgo && createdDate < lastMonthStart;
       }).length;
-      const customerGrowthPercent = customersLastMonth > 0 
-        ? ((newCustomers - customersLastMonth) / customersLastMonth) * 100 
+      const customerGrowthPercent = customersLastMonth > 0
+        ? ((newCustomers - customersLastMonth) / customersLastMonth) * 100
         : newCustomers > 0 ? 100 : 0;
 
       // Tax collection growth calculation - compare this month vs last month
@@ -1455,27 +1455,27 @@ export async function registerRoutes(app: Express): Promise<void> {
           return sum + taxAmount + vatAmount + tax;
         }, 0);
 
-      const taxGrowthPercent = lastMonthTax > 0 
-        ? ((thisMonthTax - lastMonthTax) / lastMonthTax) * 100 
+      const taxGrowthPercent = lastMonthTax > 0
+        ? ((thisMonthTax - lastMonthTax) / lastMonthTax) * 100
         : thisMonthTax > 0 ? 100 : 0;
-      
+
       // Get REAL expenses data
       const allExpenses = await db.select().from(expenses);
       const totalExpenses = allExpenses.reduce((sum, expense) => sum + parseFloat(expense.amount || '0'), 0);
-      
+
       // Calculate real profit and margin
       const netProfit = totalRevenue - totalExpenses;
       const profitMargin = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
-      
+
       // Calculate REAL outstanding invoices
       const outstandingInvoices = allSales
         .filter(sale => sale.paymentStatus === 'pending')
         .reduce((sum, sale) => sum + parseFloat(sale.grandTotal || '0'), 0);
-      
+
       // Get REAL low stock products
       const allProducts = await db.select().from(products);
       const lowStockProducts = allProducts
-        .filter(p => parseInt(p.quantity || '0') <= parseInt(p.lowStockThreshold || '10'))
+        .filter(p => (typeof p.quantity === 'number' ? p.quantity : parseInt(String(p.quantity || '0'))) <= (typeof p.lowStockThreshold === 'number' ? p.lowStockThreshold : parseInt(String(p.lowStockThreshold || '10'))))
         .slice(0, 5)
         .map(p => ({
           id: p.id,
@@ -1484,7 +1484,7 @@ export async function registerRoutes(app: Express): Promise<void> {
           quantity: p.quantity,
           status: "low_stock"
         }));
-      
+
       // Get REAL expiring products
       const now = new Date();
       const thirtyDaysFromNow = new Date(now.getTime() + (30 * 24 * 60 * 60 * 1000));
@@ -1552,12 +1552,12 @@ export async function registerRoutes(app: Express): Promise<void> {
         customerName: customers.name,
         customerCompany: customers.company
       })
-      .from(saleItems)
-      .innerJoin(sales, eq(saleItems.saleId, sales.id))
-      .leftJoin(customers, eq(sales.customerId, customers.id))
-      .where(eq(saleItems.productId, productId))
-      .orderBy(desc(sales.date))
-      .limit(10);
+        .from(saleItems)
+        .innerJoin(sales, eq(saleItems.saleId, sales.id))
+        .leftJoin(customers, eq(sales.customerId, customers.id))
+        .where(eq(saleItems.productId, productId))
+        .orderBy(desc(sales.date))
+        .limit(10);
 
       // Calculate total sales and top buyers
       const salesStats = await db.select({
@@ -1565,8 +1565,8 @@ export async function registerRoutes(app: Express): Promise<void> {
         totalRevenue: sum(saleItems.total),
         salesCount: count(saleItems.id)
       })
-      .from(saleItems)
-      .where(eq(saleItems.productId, productId));
+        .from(saleItems)
+        .where(eq(saleItems.productId, productId));
 
       // Get top buyers
       const topBuyers = await db.select({
@@ -1576,13 +1576,13 @@ export async function registerRoutes(app: Express): Promise<void> {
         totalSpent: sum(saleItems.total),
         lastPurchase: max(sales.date)
       })
-      .from(saleItems)
-      .innerJoin(sales, eq(saleItems.saleId, sales.id))
-      .leftJoin(customers, eq(sales.customerId, customers.id))
-      .where(eq(saleItems.productId, productId))
-      .groupBy(customers.id, customers.name, customers.company)
-      .orderBy(desc(sum(saleItems.total)))
-      .limit(5);
+        .from(saleItems)
+        .innerJoin(sales, eq(saleItems.saleId, sales.id))
+        .leftJoin(customers, eq(sales.customerId, customers.id))
+        .where(eq(saleItems.productId, productId))
+        .groupBy(customers.id, customers.name, customers.company)
+        .orderBy(desc(sum(saleItems.total)))
+        .limit(5);
 
       // Calculate days since/until expiry
       let expiryInfo = null;
@@ -1636,17 +1636,17 @@ export async function registerRoutes(app: Express): Promise<void> {
       if (warehouseId && warehouseId !== '0' && warehouseId !== '') {
         // Get products from specific warehouse using proper inventory system
         const warehouseNumber = parseInt(warehouseId);
-        
+
         // Verify warehouse exists
         const [warehouseRecord] = await db.select()
           .from(warehouses)
           .where(eq(warehouses.id, warehouseNumber));
-        
+
         if (!warehouseRecord) {
           console.log(`🔥 WAREHOUSE NOT FOUND: Warehouse ${warehouseNumber} does not exist`);
           return res.json([]);
         }
-        
+
         // Get products with their warehouse inventory quantities
         const productsWithInventory = await db
           .select({
@@ -1683,21 +1683,21 @@ export async function registerRoutes(app: Express): Promise<void> {
             )
           )
           .orderBy(products.name);
-        
+
         // Get categories
         const productsWithCategories = await Promise.all(
           productsWithInventory.map(async (product) => {
-            const [category] = await db.select().from(productCategories).where(eq(productCategories.id, product.categoryId));
+            const [category] = await db.select().from(productCategories).where(eq(productCategories.id, product.categoryId || 0));
             return {
               ...product,
               category: category?.name || 'Uncategorized'
             };
           })
         );
-        
+
         console.log(`🔥 WAREHOUSE INVENTORY: Found ${productsWithCategories.length} products in warehouse ${warehouseNumber} (${warehouseRecord.name})`);
         res.json(productsWithCategories);
-        
+
       } else {
         // Get ALL products from ALL warehouses with aggregated quantities
         const allProductsQuery = await db
@@ -1730,22 +1730,22 @@ export async function registerRoutes(app: Express): Promise<void> {
           .where(whereConditions.length > 0 ? and(...whereConditions) : undefined)
           .groupBy(products.id)
           .orderBy(products.name);
-        
+
         // Get categories
         const productsWithCategories = await Promise.all(
           allProductsQuery.map(async (product) => {
-            const [category] = await db.select().from(productCategories).where(eq(productCategories.id, product.categoryId));
+            const [category] = await db.select().from(productCategories).where(eq(productCategories.id, product.categoryId || 0));
             return {
               ...product,
               category: category?.name || 'Uncategorized'
             };
           })
         );
-        
+
         console.log(`🔥 ALL STOCK: Returning ${productsWithCategories.length} products aggregated from all warehouses`);
         res.json(productsWithCategories);
       }
-      
+
     } catch (error) {
       console.error("Products error:", error);
       res.status(500).json({ message: "Failed to fetch products" });
@@ -1788,7 +1788,26 @@ export async function registerRoutes(app: Express): Promise<void> {
       }
 
       // Insert into database
-      const [product] = await db.insert(products).values([validatedData]).returning();
+      const [product] = await db.insert(products).values({
+        name: validatedData.name,
+        drugName: validatedData.drugName,
+        categoryId: validatedData.categoryId,
+        description: validatedData.description,
+        sku: validatedData.sku,
+        barcode: validatedData.barcode,
+        costPrice: String(validatedData.costPrice || '0'),
+        sellingPrice: String(validatedData.sellingPrice || '0'),
+        quantity: Number(validatedData.quantity),
+        unitOfMeasure: validatedData.unitOfMeasure,
+        lowStockThreshold: validatedData.lowStockThreshold,
+        expiryDate: validatedData.expiryDate ? (validatedData.expiryDate instanceof Date ? validatedData.expiryDate.toISOString().split('T')[0] : validatedData.expiryDate) : null,
+        status: validatedData.status,
+        productType: validatedData.productType,
+        manufacturer: validatedData.manufacturer,
+        location: validatedData.location,
+        shelf: validatedData.shelf,
+        imagePath: validatedData.imagePath
+      }).returning();
       res.status(201).json(product);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -1825,8 +1844,30 @@ export async function registerRoutes(app: Express): Promise<void> {
       }
 
       // Update product in database
+      const updateData: any = { updatedAt: new Date() };
+
+      if (validatedData.name !== undefined) updateData.name = validatedData.name;
+      if (validatedData.drugName !== undefined) updateData.drugName = validatedData.drugName;
+      if (validatedData.description !== undefined) updateData.description = validatedData.description;
+      if (validatedData.categoryId !== undefined) updateData.categoryId = validatedData.categoryId;
+      if (validatedData.sku !== undefined) updateData.sku = validatedData.sku;
+      if (validatedData.barcode !== undefined) updateData.barcode = validatedData.barcode;
+      if (validatedData.costPrice !== undefined) updateData.costPrice = String(validatedData.costPrice);
+      if (validatedData.sellingPrice !== undefined) updateData.sellingPrice = String(validatedData.sellingPrice);
+      if (validatedData.quantity !== undefined) updateData.quantity = Number(validatedData.quantity);
+      if (validatedData.unitOfMeasure !== undefined) updateData.unitOfMeasure = validatedData.unitOfMeasure;
+      if (validatedData.lowStockThreshold !== undefined) updateData.lowStockThreshold = validatedData.lowStockThreshold;
+      if (validatedData.expiryDate !== undefined) updateData.expiryDate = validatedData.expiryDate instanceof Date ? validatedData.expiryDate.toISOString().split('T')[0] : validatedData.expiryDate;
+      if (validatedData.status !== undefined) updateData.status = validatedData.status;
+      if (validatedData.productType !== undefined) updateData.productType = validatedData.productType;
+      if (validatedData.manufacturer !== undefined) updateData.manufacturer = validatedData.manufacturer;
+      if (validatedData.location !== undefined) updateData.location = validatedData.location;
+      if (validatedData.shelf !== undefined) updateData.shelf = validatedData.shelf;
+      if (validatedData.grade !== undefined) updateData.grade = validatedData.grade;
+      if (validatedData.imagePath !== undefined) updateData.imagePath = validatedData.imagePath;
+
       const [updatedProduct] = await db.update(products)
-        .set({ ...validatedData, updatedAt: new Date() })
+        .set(updateData)
         .where(eq(products.id, id))
         .returning();
 
@@ -1943,7 +1984,7 @@ export async function registerRoutes(app: Express): Promise<void> {
           phone: "+20-100-123-4567",
           address: "123 Main St",
           city: "Cairo",
-          state: "Cairo Governorate", 
+          state: "Cairo Governorate",
           zipCode: "12345",
           company: "Cairo Pharmaceuticals",
           position: "Purchase Manager",
@@ -1956,7 +1997,7 @@ export async function registerRoutes(app: Express): Promise<void> {
         {
           id: 2,
           name: "Fatima Al-Zahra",
-          email: "fatima.zahra@email.com", 
+          email: "fatima.zahra@email.com",
           phone: "+20-101-234-5678",
           address: "456 Oak Ave",
           city: "Alexandria",
@@ -1998,18 +2039,17 @@ export async function registerRoutes(app: Express): Promise<void> {
 
       const { customerId, startDate, endDate } = req.query;
 
+      let result;
       if (customerId) {
-        salesQuery = salesQuery.where(eq(sales.customerId, Number(customerId)));
-      } 
-
-      if (startDate && endDate) {
-        salesQuery = salesQuery.where(and(
+        result = await salesQuery.where(eq(sales.customerId, Number(customerId))).orderBy(desc(sales.date));
+      } else if (startDate && endDate) {
+        result = await salesQuery.where(and(
           gte(sales.date, new Date(startDate as string)),
           lte(sales.date, new Date(endDate as string))
-        ));
+        )).orderBy(desc(sales.date));
+      } else {
+        result = await salesQuery.orderBy(desc(sales.date));
       }
-
-      const result = await salesQuery.orderBy(desc(sales.date));
       res.json(result);
     } catch (error) {
       console.error("Sales error:", error);
@@ -2051,7 +2091,7 @@ export async function registerRoutes(app: Express): Promise<void> {
 
         // Update product stock
         await db.update(products)
-          .set({ 
+          .set({
             quantity: sql`${products.quantity} - ${validatedItem.quantity}`
           })
           .where(eq(products.id, validatedItem.productId));
@@ -2073,14 +2113,14 @@ export async function registerRoutes(app: Express): Promise<void> {
   app.get("/api/invoices", async (req: Request, res: Response) => {
     try {
       const invoices = await db.select().from(sales).orderBy(desc(sales.date));
-      
+
       const invoicesWithCustomers = await Promise.all(invoices.map(async (invoice) => {
         let customerName = 'Cash Sale';
         if (invoice.customerId) {
           const [customer] = await db.select().from(customers).where(eq(customers.id, invoice.customerId));
           if (customer) customerName = customer.name;
         }
-        
+
         return {
           id: invoice.id,
           invoiceNumber: invoice.invoiceNumber,
@@ -2093,7 +2133,7 @@ export async function registerRoutes(app: Express): Promise<void> {
           notes: invoice.notes
         };
       }));
-      
+
       res.json(invoicesWithCustomers);
     } catch (error) {
       console.error("Get invoices error:", error);
@@ -2105,7 +2145,7 @@ export async function registerRoutes(app: Express): Promise<void> {
   app.post("/api/invoices", async (req: Request, res: Response) => {
     try {
       const invoiceData = req.body;
-      
+
       // Validate required fields
       if (!invoiceData.items || !Array.isArray(invoiceData.items) || invoiceData.items.length === 0) {
         return res.status(400).json({ message: "Invoice must have at least one item" });
@@ -2117,7 +2157,7 @@ export async function registerRoutes(app: Express): Promise<void> {
         const itemSubtotal = parseFloat(item.subtotal) || (parseFloat(item.quantity) * parseFloat(item.unitPrice));
         calculatedSubtotal += itemSubtotal;
       }
-      
+
       // Use provided values or calculate them
       const subtotal = parseFloat(invoiceData.subtotal) || calculatedSubtotal;
       const taxAmount = parseFloat(invoiceData.taxAmount) || (subtotal * 0.14); // 14% VAT default
@@ -2130,7 +2170,7 @@ export async function registerRoutes(app: Express): Promise<void> {
       // Create sale/invoice record
       // Extract customer ID from the customer object or use direct customerId
       const customerId = invoiceData.customer?.id || invoiceData.customerId || null;
-      
+
       const [newInvoice] = await db.insert(sales).values({
         customerId: customerId,
         userId: 1, // Use existing admin user ID
@@ -2154,11 +2194,11 @@ export async function registerRoutes(app: Express): Promise<void> {
       }).returning();
 
       // ============= INVENTORY VALIDATION AND DEDUCTION =============
-      
+
       // Validate stock availability for all items before processing
       const stockValidation = [];
       const inventoryDeductions = [];
-      
+
       for (const item of invoiceData.items) {
         if (item.productId && item.quantity) {
           const stockCheck = await db
@@ -2175,7 +2215,7 @@ export async function registerRoutes(app: Express): Promise<void> {
 
           const availableStock = stockCheck.reduce((sum, stock) => sum + stock.availableQuantity, 0);
           const requiredQuantity = parseFloat(item.quantity);
-          
+
           if (availableStock < requiredQuantity) {
             return res.status(400).json({
               success: false,
@@ -2189,7 +2229,7 @@ export async function registerRoutes(app: Express): Promise<void> {
               }
             });
           }
-          
+
           stockValidation.push({
             productId: item.productId,
             quantity: requiredQuantity,
@@ -2198,19 +2238,19 @@ export async function registerRoutes(app: Express): Promise<void> {
           });
         }
       }
-      
+
       console.log('✅ STOCK VALIDATION PASSED for all invoice items');
-      
+
       // Immediately deduct inventory for invoices (invoices are immediate sales)
       for (const validation of stockValidation) {
         let remainingQuantity = validation.quantity;
         const itemDeductions = [];
-        
+
         for (const warehouse of validation.warehouseDetails) {
           if (remainingQuantity <= 0) break;
-          
+
           const deductFromWarehouse = Math.min(remainingQuantity, warehouse.availableQuantity);
-          
+
           if (deductFromWarehouse > 0) {
             await db
               .update(warehouseInventory)
@@ -2233,14 +2273,14 @@ export async function registerRoutes(app: Express): Promise<void> {
             remainingQuantity -= deductFromWarehouse;
           }
         }
-        
+
         inventoryDeductions.push({
           productId: validation.productId,
           quantity: validation.quantity,
           deductions: itemDeductions
         });
       }
-      
+
       console.log('✅ INVENTORY DEDUCTED successfully for all invoice items:', inventoryDeductions);
 
       // Create sale items
@@ -2248,7 +2288,7 @@ export async function registerRoutes(app: Express): Promise<void> {
         const quantity = parseFloat(item.quantity) || 0;
         const unitPrice = parseFloat(item.unitPrice) || 0;
         const itemTotal = quantity * unitPrice;
-        
+
         await db.insert(saleItems).values({
           saleId: newInvoice.id,
           productId: item.productId,
@@ -2261,28 +2301,27 @@ export async function registerRoutes(app: Express): Promise<void> {
 
       // Create accounting entries for the invoice
       const currentDate = new Date();
-      
+
       // Generate journal entry number
       const journalCount = await db.select({ count: count() }).from(journalEntries);
       const entryNumber = `JE-${String(journalCount[0].count + 1).padStart(6, '0')}`;
-      
+
       // 1. Debit Accounts Receivable
       await db.insert(journalEntries).values({
         entryNumber: entryNumber,
-        date: currentDate,
-        description: `Invoice ${invoiceNumber} - ${invoiceData.customerName || 'Customer'}`,
+        date: currentDate.toISOString().split('T')[0],
+        memo: `Invoice ${invoiceNumber} - ${invoiceData.customerName || 'Customer'}`,
         reference: invoiceNumber,
-        type: 'invoice',
         status: 'posted',
-        createdBy: 1,
+        userId: 1,
         totalDebit: totalAmount.toFixed(2),
         totalCredit: totalAmount.toFixed(2),
         sourceType: 'invoice',
         sourceId: newInvoice.id
       });
-      
+
       const [journalEntry] = await db.select().from(journalEntries).orderBy(desc(journalEntries.id)).limit(1);
-      
+
       // Create journal entry lines
       // Debit A/R (using Bank Account as placeholder for Accounts Receivable)
       await db.insert(journalEntryLines).values({
@@ -2292,7 +2331,7 @@ export async function registerRoutes(app: Express): Promise<void> {
         credit: "0",
         description: `Invoice ${invoiceNumber}`
       });
-      
+
       // Credit Sales Revenue
       await db.insert(journalEntryLines).values({
         journalEntryId: journalEntry.id,
@@ -2318,7 +2357,7 @@ export async function registerRoutes(app: Express): Promise<void> {
   app.get("/api/invoices/:id", async (req: Request, res: Response) => {
     try {
       const invoiceId = Number(req.params.id);
-      
+
       const [invoice] = await db.select().from(sales).where(eq(sales.id, invoiceId));
       if (!invoice) {
         return res.status(404).json({ message: "Invoice not found" });
@@ -2339,14 +2378,14 @@ export async function registerRoutes(app: Express): Promise<void> {
         unitPrice: saleItems.unitPrice,
         total: saleItems.total
       })
-      .from(saleItems)
-      .leftJoin(products, eq(saleItems.productId, products.id))
-      .where(eq(saleItems.saleId, invoiceId));
+        .from(saleItems)
+        .leftJoin(products, eq(saleItems.productId, products.id))
+        .where(eq(saleItems.saleId, invoiceId));
 
       // Calculate payment information based on status
       const totalAmount = parseFloat(invoice.grandTotal || invoice.totalAmount || "0");
       let amountPaid = 0;
-      
+
       if (invoice.paymentStatus === 'paid') {
         amountPaid = totalAmount;
       } else if (invoice.paymentStatus === 'partial') {
@@ -2412,20 +2451,20 @@ export async function registerRoutes(app: Express): Promise<void> {
   app.post('/api/test-password', async (req: Request, res: Response) => {
     try {
       const { email, password } = req.body;
-      
+
       // Find user by email
       const [user] = await db.select().from(users).where(eq(users.email, email));
-      
+
       if (!user) {
         return res.json({ error: 'User not found' });
       }
-      
+
       const bcrypt = require('bcryptjs');
-      
+
       // Test the exact password comparison
       const syncResult = bcrypt.compareSync(password, user.password);
       const asyncResult = await bcrypt.compare(password, user.password);
-      
+
       const result = {
         userFound: true,
         username: user.username,
@@ -2440,10 +2479,10 @@ export async function registerRoutes(app: Express): Promise<void> {
         hashTrimmed: user.password.trim(),
         passwordLength: password.length
       };
-      
+
       res.json(result);
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
     }
   });
 
@@ -2465,7 +2504,7 @@ export async function registerRoutes(app: Express): Promise<void> {
 
       // Check if password is hashed or plain text
       let isValidPassword = false;
-      
+
       if (user.password.startsWith('$2b$') || user.password.startsWith('$2a$')) {
         // Use bcrypt for hashed passwords
         const bcrypt = require('bcryptjs');
@@ -2485,9 +2524,9 @@ export async function registerRoutes(app: Express): Promise<void> {
       }
 
       // Set session
-      req.session.userId = user.id;
-      req.session.username = user.username;
-      req.session.role = user.role;
+      (req as any).session.userId = user.id;
+      (req as any).session.username = user.username;
+      (req as any).session.role = user.role;
 
       res.json({
         user: {
@@ -2497,8 +2536,8 @@ export async function registerRoutes(app: Express): Promise<void> {
           email: user.email,
           role: user.role,
           status: user.status,
-          createdAt: user.created_at,
-          updatedAt: user.updated_at
+          createdAt: user.createdAt,
+          updatedAt: user.updatedAt
         },
         token: 'session-token', // Session-based auth, token not needed but expected by client
         message: 'Login successful'
@@ -2511,7 +2550,7 @@ export async function registerRoutes(app: Express): Promise<void> {
 
   // Logout endpoint
   app.post('/api/auth/logout', (req: Request, res: Response) => {
-    req.session.destroy((err) => {
+    (req as any).session.destroy((err: any) => {
       if (err) {
         return res.status(500).json({ error: 'Logout failed' });
       }
@@ -2525,7 +2564,7 @@ export async function registerRoutes(app: Express): Promise<void> {
   app.get("/api/quotations", async (req: Request, res: Response) => {
     try {
       logger.info("Fetching quotations from database...");
-      
+
       // Get quotations from database
       const dbQuotations = await db.select().from(quotations).orderBy(desc(quotations.createdAt));
       logger.info(`Found ${dbQuotations.length} quotations in database`);
@@ -2548,14 +2587,14 @@ export async function registerRoutes(app: Express): Promise<void> {
           }
 
           // Get quotation items
-          let items = [];
+          let items: any[] = [];
           try {
             const quotationItemsData = await db.select()
               .from(quotationItems)
               .where(eq(quotationItems.quotationId, quotation.id))
               .orderBy(quotationItems.id);
 
-            items = await Promise.all(
+            let items: any[] = await Promise.all(
               quotationItemsData.map(async (item) => {
                 // Get product details
                 let productName = "Unknown Product";
@@ -2590,7 +2629,7 @@ export async function registerRoutes(app: Express): Promise<void> {
           }
 
           // Get packaging items
-          let packagingItems = [];
+          let packagingItems: any[] = [];
           try {
             // Query packaging items from the database using Drizzle ORM
             const dbPackagingItems = await db.select()
@@ -2629,8 +2668,8 @@ export async function registerRoutes(app: Express): Promise<void> {
             amount: parseFloat(quotation.grandTotal?.toString() || '0'),
             status: quotation.status || 'pending',
             termsAndConditions: quotation.termsAndConditions || "1. Validity: This quotation is valid for 30 days from the date of issue.\n\n2. Payment Terms: 50% advance payment required upon order confirmation. Balance due upon completion/delivery.\n\n3. Quality Assurance: All pharmaceutical services comply with GMP standards and regulatory requirements as per Egyptian Drug Authority guidelines.\n\n4. Delivery: Delivery times are estimates and subject to production schedules, regulatory approvals, and raw material availability.\n\n5. Changes: Any changes to specifications, quantities, or requirements after quotation acceptance may affect pricing and delivery timelines.\n\n6. Liability: Our liability is limited to the value of services provided. We maintain comprehensive insurance coverage for pharmaceutical operations.",
-            items: items,
-            packagingItems: packagingItems
+            items: items as any[],
+            packagingItems: packagingItems as any[]
           };
         })
       );
@@ -2645,7 +2684,7 @@ export async function registerRoutes(app: Express): Promise<void> {
         filteredQuotations = filteredQuotations.filter(quotation =>
           quotation.quotationNumber.toLowerCase().includes(searchTerm) ||
           quotation.customerName.toLowerCase().includes(searchTerm) ||
-          quotation.items.some(item => 
+          quotation.items.some(item =>
             item.productName.toLowerCase().includes(searchTerm)
           )
         );
@@ -2703,7 +2742,7 @@ export async function registerRoutes(app: Express): Promise<void> {
       // Normalize packaging items to handle different field names/formats
       const rawPackagingItems = req.body.packagingItems ?? req.body.packaging_items ?? req.body.packaging;
       let packagingItems = [];
-      
+
       if (rawPackagingItems) {
         if (Array.isArray(rawPackagingItems)) {
           packagingItems = rawPackagingItems;
@@ -2737,11 +2776,11 @@ export async function registerRoutes(app: Express): Promise<void> {
         date
       } = req.body;
 
-      logger.info("Creating quotation with data:", { 
-        quotationNumber, 
-        customerId, 
-        items: items?.length || 0, 
-        packagingItems: packagingItems?.length || 0 
+      logger.info("Creating quotation with data:", {
+        quotationNumber,
+        customerId,
+        items: items?.length || 0,
+        packagingItems: packagingItems?.length || 0
       });
 
       // Generate quotation number if not provided
@@ -2753,7 +2792,7 @@ export async function registerRoutes(app: Express): Promise<void> {
         customerId: customerId || null,
         userId: 1, // TODO: Get from authenticated user session
         issueDate: date ? new Date(date) : new Date(),
-        validUntil: validUntil ? new Date(validUntil) : null,
+        validUntil: validUntil ? new Date(validUntil).toISOString().split('T')[0] : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
         subtotal: parseFloat(subtotal?.toString() || '0').toString(),
         taxRate: tax && subtotal ? (Number(tax) / Number(subtotal) * 100).toString() : "0",
         taxAmount: parseFloat(tax?.toString() || '0').toString(),
@@ -2772,7 +2811,7 @@ export async function registerRoutes(app: Express): Promise<void> {
         logger.info("Saving quotation items", { count: items.length });
         for (const item of items) {
           let productId = item.productId;
-          
+
           // If no productId provided, look up by product name
           if (!productId && item.productName) {
             const [existingProduct] = await db
@@ -2780,7 +2819,7 @@ export async function registerRoutes(app: Express): Promise<void> {
               .from(products)
               .where(eq(products.name, item.productName))
               .limit(1);
-            
+
             if (existingProduct) {
               productId = existingProduct.id;
               logger.info(`Found product ID ${productId} for product name "${item.productName}"`);
@@ -2789,7 +2828,7 @@ export async function registerRoutes(app: Express): Promise<void> {
               throw new Error(`Product "${item.productName}" not found in database`);
             }
           }
-          
+
           if (!productId) {
             throw new Error('Product ID is required for quotation items');
           }
@@ -2809,7 +2848,7 @@ export async function registerRoutes(app: Express): Promise<void> {
       // Save packaging items if provided with validation
       if (packagingItems && packagingItems.length > 0) {
         logger.info("Processing packaging items", { count: packagingItems.length });
-        
+
         for (let i = 0; i < packagingItems.length; i++) {
           const packagingItem = packagingItems[i];
           logger.info(`Processing packaging item ${i + 1}:`, packagingItem);
@@ -2854,21 +2893,21 @@ export async function registerRoutes(app: Express): Promise<void> {
 
     } catch (error) {
       logger.error("Create quotation error:", error);
-      
+
       // Enhanced error logging for packaging items
       if (error instanceof z.ZodError) {
         logger.error("Zod validation failed:", error.errors);
-        return res.status(400).json({ 
+        return res.status(400).json({
           success: false,
           message: "Invalid packaging item data",
-          errors: error.errors 
+          errors: error.errors
         });
       }
 
-      res.status(500).json({ 
+      res.status(500).json({
         success: false,
         message: "Failed to create quotation",
-        error: error.message 
+        error: error instanceof Error ? error.message : 'Unknown error'
       });
     }
   });
@@ -2947,7 +2986,7 @@ export async function registerRoutes(app: Express): Promise<void> {
         createdAt: systemPreferences.createdAt,
         updatedAt: systemPreferences.updatedAt
       }).from(systemPreferences);
-      const filteredPreferences = preferences.filter(pref => 
+      const filteredPreferences = preferences.filter(pref =>
         pref.key.toLowerCase().includes(category.toLowerCase())
       );
       res.json(filteredPreferences);
@@ -3016,35 +3055,35 @@ export async function registerRoutes(app: Express): Promise<void> {
   });
 
   // ============= Accounting Overview Endpoint =============
-  
+
   // Get comprehensive accounting overview for dashboard
   app.get("/api/accounting/overview", async (req: Request, res: Response) => {
     try {
       console.log("🔥 Fetching REAL accounting overview data from database...");
-      
+
       // Get all sales data
       const allSales = await db.select().from(sales);
-      
+
       // Get all expenses data  
       const allExpenses = await db.select().from(expenses);
-      
+
       // Calculate total revenue from all sales
       const totalRevenue = allSales.reduce((sum, sale) => sum + parseFloat(sale.grandTotal || '0'), 0);
-      
+
       // Calculate total expenses
       const totalExpenses = allExpenses.reduce((sum, expense) => sum + parseFloat(expense.amount || '0'), 0);
-      
+
       // Calculate REAL total tax collected from all invoices (taxAmount + vatAmount + tax)
       const totalTaxCollected = allSales.reduce((sum, sale) => {
         const taxAmount = parseFloat(sale.taxAmount || '0');
-        const vatAmount = parseFloat(sale.vatAmount || '0'); 
+        const vatAmount = parseFloat(sale.vatAmount || '0');
         const tax = parseFloat(sale.tax || '0');
         return sum + taxAmount + vatAmount + tax;
       }, 0);
-      
+
       // Calculate REAL net profit: Revenue - Expenses - Tax - Costs
       const netProfit = totalRevenue - totalExpenses - totalTaxCollected;
-      
+
       // Calculate outstanding invoices
       const outstandingInvoices = allSales
         .filter(sale => sale.paymentStatus === 'pending' || sale.paymentStatus === 'partial')
@@ -3053,35 +3092,35 @@ export async function registerRoutes(app: Express): Promise<void> {
           const amountPaid = parseFloat(sale.amountPaid || '0');
           return sum + (grandTotal - amountPaid);
         }, 0);
-      
+
       // Count pending invoices
       const pendingInvoiceCount = allSales
         .filter(sale => sale.paymentStatus === 'pending' || sale.paymentStatus === 'partial')
         .length;
-      
+
       // Count payments received this month
       const today = new Date();
       const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
       const completedPaymentsThisMonth = allSales
         .filter(sale => sale.paymentStatus === 'completed' && new Date(sale.date) >= monthStart);
-      
+
       console.log(`🔥 REAL PAYMENTS THIS MONTH (${completedPaymentsThisMonth.length}):`, completedPaymentsThisMonth.map(sale => ({
         invoiceNumber: sale.invoiceNumber,
-        customer: sale.customerName,
+        customer: 'Customer',
         amount: sale.grandTotal,
         paymentStatus: sale.paymentStatus,
         date: sale.date
       })));
-      
+
       const paymentCount = completedPaymentsThisMonth.length;
-      
+
       // Get pending orders (simplified for now)
       const pendingOrders = 0; // This would need purchase order data if available
       const orderCount = 0;
-      
+
       // Calculate cash balance (simplified as net profit for now)
       const cashBalance = netProfit;
-      
+
       const overviewData = {
         totalRevenue: Math.round(totalRevenue * 100) / 100,
         totalExpenses: Math.round(totalExpenses * 100) / 100,
@@ -3095,9 +3134,9 @@ export async function registerRoutes(app: Express): Promise<void> {
         cashBalance: Math.round(cashBalance * 100) / 100,
         expenseCount: allExpenses.length
       };
-      
+
       console.log(`✅ REAL Accounting Overview: Revenue ${totalRevenue}, Expenses ${totalExpenses}, Tax ${totalTaxCollected}, Net Profit ${netProfit}`);
-      
+
       res.json(overviewData);
     } catch (error) {
       console.error("❌ Accounting overview error:", error);
@@ -3106,38 +3145,38 @@ export async function registerRoutes(app: Express): Promise<void> {
   });
 
   // ============= Dashboard Analytics Endpoint - REAL DATA ONLY =============
-  
+
   // Get comprehensive dashboard analytics with ZERO hardcoded values
   app.get("/api/dashboard/analytics", async (req: Request, res: Response) => {
     try {
       console.log("🔥 Fetching REAL analytics data from database...");
-      
+
       // Get all sales data for calculations
       const allSales = await db.select().from(sales);
-      const completedSales = allSales.filter(sale => 
+      const completedSales = allSales.filter(sale =>
         sale.paymentStatus === 'completed' || sale.paymentStatus === 'partial'
       );
-      
+
       // Current date calculations
       const now = new Date();
       const currentYear = now.getFullYear();
       const currentMonth = now.getMonth();
       const currentYearStart = new Date(currentYear, 0, 1);
-      
+
       // Calculate monthly data for last 24 months (for YoY comparison)
       const monthlyData = [];
       for (let i = 23; i >= 0; i--) {
         const monthDate = new Date(now.getFullYear(), now.getMonth() - i, 1);
         const nextMonth = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 1);
-        
+
         const monthSales = completedSales.filter(sale => {
           const saleDate = new Date(sale.date);
           return saleDate >= monthDate && saleDate < nextMonth;
         });
-        
+
         const monthRevenue = monthSales.reduce((sum, sale) => sum + parseFloat(sale.grandTotal || '0'), 0);
         const monthOrders = monthSales.length;
-        
+
         monthlyData.push({
           year: monthDate.getFullYear(),
           month: monthDate.getMonth() + 1,
@@ -3147,57 +3186,57 @@ export async function registerRoutes(app: Express): Promise<void> {
           date: monthDate
         });
       }
-      
+
       // Find peak month from last 12 months
       const last12Months = monthlyData.slice(-12);
-      const peakMonth = last12Months.reduce((peak, current) => 
+      const peakMonth = last12Months.reduce((peak, current) =>
         current.revenue > peak.revenue ? current : peak
       );
-      
+
       // Current month data
       const currentMonthData = monthlyData[monthlyData.length - 1];
       const previousMonthData = monthlyData[monthlyData.length - 2];
-      const sameMonthLastYearData = monthlyData.find(m => 
+      const sameMonthLastYearData = monthlyData.find(m =>
         m.month === currentMonthData.month && m.year === currentMonthData.year - 1
       );
-      
+
       // Calculate YoY growth rate
       let growthYoYPct = null;
       if (sameMonthLastYearData && sameMonthLastYearData.revenue > 0) {
         growthYoYPct = ((currentMonthData.revenue - sameMonthLastYearData.revenue) / sameMonthLastYearData.revenue) * 100;
       }
-      
+
       // Calculate MoM growth rate
       let growthMoMPct = null;
       if (previousMonthData && previousMonthData.revenue > 0) {
         growthMoMPct = ((currentMonthData.revenue - previousMonthData.revenue) / previousMonthData.revenue) * 100;
       }
-      
+
       // Calculate monthly average over last 12 months
       const totalRevenueLast12Months = last12Months.reduce((sum, month) => sum + month.revenue, 0);
       const monthlyAverage12M = totalRevenueLast12Months / 12;
-      
+
       // Calculate Year-to-Date revenue
       const ytdRevenue = completedSales
         .filter(sale => new Date(sale.date) >= currentYearStart)
         .reduce((sum, sale) => sum + parseFloat(sale.grandTotal || '0'), 0);
-      
+
       // Calculate target attainment (using derived baseline)
       const derivedMonthlyTarget = monthlyAverage12M;
       const monthsElapsed = currentMonth + 1;
       const derivedYTDTarget = derivedMonthlyTarget * monthsElapsed;
       const targetAttainmentPct = derivedYTDTarget > 0 ? (ytdRevenue / derivedYTDTarget) * 100 : 0;
-      
+
       // Determine trend direction
       let trendDirection = 'stable';
       if (growthYoYPct !== null) {
         if (growthYoYPct > 2) trendDirection = 'up';
         else if (growthYoYPct < -2) trendDirection = 'down';
       }
-      
+
       // Calculate average order value for current month
       const avgOrderValue = currentMonthData.orders > 0 ? currentMonthData.revenue / currentMonthData.orders : 0;
-      
+
       const analyticsData = {
         months: monthlyData,
         peak: {
@@ -3228,9 +3267,9 @@ export async function registerRoutes(app: Express): Promise<void> {
         avgOrderValue: Math.round(avgOrderValue * 100) / 100,
         derivedMonthlyTarget: Math.round(derivedMonthlyTarget * 100) / 100
       };
-      
+
       console.log(`✅ REAL Analytics: Peak ${peakMonth.monthName} (${peakMonth.revenue}), YoY ${growthYoYPct}%, YTD ${ytdRevenue}`);
-      
+
       res.json(analyticsData);
     } catch (error) {
       console.error("❌ Analytics error:", error);
@@ -3343,15 +3382,15 @@ export async function registerRoutes(app: Express): Promise<void> {
           END
         `
       })
-      .from(products)
-      .leftJoin(productCategories, eq(products.categoryId, productCategories.id))
-      .where(
-        and(
-          eq(products.status, 'active'),
-          lte(products.quantity, products.lowStockThreshold)
+        .from(products)
+        .leftJoin(productCategories, eq(products.categoryId, productCategories.id))
+        .where(
+          and(
+            eq(products.status, 'active'),
+            lte(products.quantity, products.lowStockThreshold)
+          )
         )
-      )
-      .orderBy(products.quantity);
+        .orderBy(products.quantity);
 
       res.json(lowStockProducts);
     } catch (error) {
@@ -3392,15 +3431,15 @@ export async function registerRoutes(app: Express): Promise<void> {
           END
         `
       })
-      .from(products)
-      .leftJoin(productCategories, eq(products.categoryId, productCategories.id))
-      .where(
-        and(
-          eq(products.status, 'active'),
-          lte(products.expiryDate, thirtyDaysFromNow.toISOString().split('T')[0])
+        .from(products)
+        .leftJoin(productCategories, eq(products.categoryId, productCategories.id))
+        .where(
+          and(
+            eq(products.status, 'active'),
+            lte(products.expiryDate, thirtyDaysFromNow.toISOString().split('T')[0])
+          )
         )
-      )
-      .orderBy(products.expiryDate);
+        .orderBy(products.expiryDate);
 
       res.json(expiringProducts);
     } catch (error) {
@@ -3414,54 +3453,54 @@ export async function registerRoutes(app: Express): Promise<void> {
     try {
       // Get all products to calculate real counts
       const allProducts = await db.select().from(products);
-      
+
       // Calculate real counts from actual data
       const totalProducts = allProducts.length;
-      
+
       const lowStockCount = allProducts.filter(p => {
-        const quantity = parseInt(p.quantity || '0');
-        const threshold = parseInt(p.lowStockThreshold || '10');
+        const quantity = typeof p.quantity === 'number' ? p.quantity : parseInt(String(p.quantity || '0'));
+        const threshold = typeof p.lowStockThreshold === 'number' ? p.lowStockThreshold : parseInt(String(p.lowStockThreshold || '10'));
         return quantity <= threshold;
       }).length;
-      
+
       const outOfStockCount = allProducts.filter(p => {
-        const quantity = parseInt(p.quantity || '0');
+        const quantity = typeof p.quantity === 'number' ? p.quantity : parseInt(String(p.quantity || '0'));
         return quantity <= 0;
       }).length;
-      
+
       const now = new Date();
       const thirtyDaysFromNow = new Date(now.getTime() + (30 * 24 * 60 * 60 * 1000));
-      
+
       const expiredCount = allProducts.filter(p => {
         if (!p.expiryDate) return false;
         const expiryDate = new Date(p.expiryDate);
         return expiryDate < now;
       }).length;
-      
+
       const expiringCount = allProducts.filter(p => {
         if (!p.expiryDate) return false;
         const expiryDate = new Date(p.expiryDate);
         return expiryDate >= now && expiryDate <= thirtyDaysFromNow;
       }).length;
-      
+
       const totalInventoryValue = allProducts.reduce((sum, p) => {
-        const quantity = parseInt(p.quantity || '0');
-        const cost = parseFloat(p.costPrice || '0');
+        const quantity = typeof p.quantity === 'number' ? p.quantity : parseInt(String(p.quantity || '0'));
+        const cost = parseFloat(String(p.costPrice || '0'));
         return sum + (quantity * cost);
       }, 0);
-      
+
       const totalSellingValue = allProducts.reduce((sum, p) => {
-        const quantity = parseInt(p.quantity || '0');
-        const price = parseFloat(p.sellingPrice || '0');
+        const quantity = typeof p.quantity === 'number' ? p.quantity : parseInt(String(p.quantity || '0'));
+        const price = parseFloat(String(p.sellingPrice || '0'));
         return sum + (quantity * price);
       }, 0);
-      
+
       const totalQuantity = allProducts.reduce((sum, p) => {
-        return sum + parseInt(p.quantity || '0');
+        return sum + (typeof p.quantity === 'number' ? p.quantity : parseInt(String(p.quantity || '0')));
       }, 0);
-      
+
       const activeProducts = allProducts.filter(p => p.status === 'active').length;
-      
+
       const warehouseCount = new Set(allProducts.map(p => p.location).filter(Boolean)).size;
 
       const summary = {
@@ -3496,15 +3535,15 @@ export async function registerRoutes(app: Express): Promise<void> {
         total_cost_value: sql`SUM(CAST(${products.quantity} AS INTEGER) * CAST(${products.costPrice} AS DECIMAL))`,
         total_selling_value: sql`SUM(CAST(${products.quantity} AS INTEGER) * CAST(${products.sellingPrice} AS DECIMAL))`
       })
-      .from(products)
-      .where(
-        and(
-          eq(products.status, 'active'),
-          sql`${products.location} IS NOT NULL AND ${products.location} != ''`
+        .from(products)
+        .where(
+          and(
+            eq(products.status, 'active'),
+            sql`${products.location} IS NOT NULL AND ${products.location} != ''`
+          )
         )
-      )
-      .groupBy(products.location)
-      .orderBy(products.location);
+        .groupBy(products.location)
+        .orderBy(products.location);
 
       console.log(`✅ WAREHOUSE API SUCCESS: Returning ${warehouseBreakdown.length} warehouses with live inventory calculations`);
       res.json(warehouseBreakdown);
@@ -3518,7 +3557,7 @@ export async function registerRoutes(app: Express): Promise<void> {
   app.get('/api/products/:id/details', async (req: Request, res: Response) => {
     try {
       const productId = Number(req.params.id);
-      
+
       // Get product with warehouse information
       const [productResult] = await db.select({
         id: products.id,
@@ -3535,9 +3574,9 @@ export async function registerRoutes(app: Express): Promise<void> {
         manufacturer: products.manufacturer,
         barcode: products.barcode
       })
-      .from(products)
-      .where(eq(products.id, productId))
-      .limit(1);
+        .from(products)
+        .where(eq(products.id, productId))
+        .limit(1);
 
       if (!productResult) {
         return res.status(404).json({ error: 'Product not found' });
@@ -3555,7 +3594,7 @@ export async function registerRoutes(app: Express): Promise<void> {
   app.get('/api/products/:id/activity', async (req: Request, res: Response) => {
     try {
       const productId = Number(req.params.id);
-      
+
       // Get product info and transactions in one query
       const result = await db.execute(sql`
         SELECT 
@@ -3578,11 +3617,11 @@ export async function registerRoutes(app: Express): Promise<void> {
         ORDER BY it.created_at DESC 
         LIMIT 10
       `);
-      
+
       if (!result.rows || result.rows.length === 0) {
         return res.status(404).json({ error: 'Product not found' });
       }
-      
+
       const firstRow = result.rows[0];
       const product = {
         id: firstRow.product_id,
@@ -3598,32 +3637,32 @@ export async function registerRoutes(app: Express): Promise<void> {
       for (const row of result.rows) {
         // Skip rows without transaction data (LEFT JOIN might return product-only rows)
         if (!row.transaction_id) continue;
-        
+
         let activityType, title, description, icon;
-        
+
         switch (row.type) {
           case 'purchase':
             activityType = 'purchase';
             title = 'Stock Received';
-            description = `Received ${Math.abs(row.transaction_quantity)} ${product.unit_of_measure}`;
+            description = `Received ${Math.abs(Number(row.transaction_quantity))} ${product.unit_of_measure}`;
             icon = 'package';
             break;
           case 'sale':
             activityType = 'sale';
             title = 'Stock Sold';
-            description = `Sold ${Math.abs(row.transaction_quantity)} ${product.unit_of_measure}`;
+            description = `Sold ${Math.abs(Number(row.transaction_quantity))} ${product.unit_of_measure}`;
             icon = 'shopping-cart';
             break;
           case 'adjustment':
             activityType = 'adjustment';
             title = 'Inventory Adjustment';
-            description = `${row.transaction_quantity > 0 ? 'Added' : 'Removed'} ${Math.abs(row.transaction_quantity)} ${product.unit_of_measure}`;
+            description = `${Number(row.transaction_quantity) > 0 ? 'Added' : 'Removed'} ${Math.abs(Number(row.transaction_quantity))} ${product.unit_of_measure}`;
             icon = 'settings';
             break;
           default:
             activityType = 'update';
             title = 'Inventory Update';
-            description = `Updated ${Math.abs(row.transaction_quantity)} ${product.unit_of_measure}`;
+            description = `Updated ${Math.abs(Number(row.transaction_quantity))} ${product.unit_of_measure}`;
             icon = 'edit';
         }
 
@@ -3634,7 +3673,7 @@ export async function registerRoutes(app: Express): Promise<void> {
           date: row.transaction_date,
           user: 'System Administrator',
           icon: icon,
-          reference: row.reference_type ? `${row.reference_type.toUpperCase()}-${row.reference_id || 'N/A'}` : null,
+          reference: row.reference_type ? `${String(row.reference_type).toUpperCase()}-${row.reference_id || 'N/A'}` : null,
           notes: row.notes
         });
       }
@@ -3652,7 +3691,7 @@ export async function registerRoutes(app: Express): Promise<void> {
       }
 
       // Sort by date (most recent first)
-      activities.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      activities.sort((a, b) => new Date(String(b.date)).getTime() - new Date(String(a.date)).getTime());
 
       console.log(`✅ Returning ${activities.length} REAL activity entries for product ID ${productId}: ${product.name}`);
       res.json(activities);
@@ -3683,11 +3722,11 @@ export async function registerRoutes(app: Express): Promise<void> {
       const [warehouse] = await db.select()
         .from(warehouses)
         .where(eq(warehouses.id, id));
-      
+
       if (!warehouse) {
         return res.status(404).json({ error: 'Warehouse not found' });
       }
-      
+
       res.json(warehouse);
     } catch (error) {
       console.error('Error fetching warehouse:', error);
@@ -3699,11 +3738,11 @@ export async function registerRoutes(app: Express): Promise<void> {
   app.post('/api/warehouses', async (req: Request, res: Response) => {
     try {
       const { name, code, address } = req.body;
-      
+
       if (!name) {
         return res.status(400).json({ error: 'Warehouse name is required' });
       }
-      
+
       const warehouseData = {
         name: name.trim(),
         code: code?.trim() || `WH${Date.now()}`,
@@ -3711,11 +3750,11 @@ export async function registerRoutes(app: Express): Promise<void> {
         managerId: null,
         isActive: true
       };
-      
+
       const [newWarehouse] = await db.insert(warehouses)
         .values(warehouseData)
         .returning();
-      
+
       console.log(`✅ NEW WAREHOUSE CREATED: ${newWarehouse.name} (ID: ${newWarehouse.id})`);
       res.status(201).json(newWarehouse);
     } catch (error) {
@@ -3729,26 +3768,26 @@ export async function registerRoutes(app: Express): Promise<void> {
     try {
       const id = Number(req.params.id);
       const { name, code, address, isActive } = req.body;
-      
+
       const [warehouse] = await db.select()
         .from(warehouses)
         .where(eq(warehouses.id, id));
-      
+
       if (!warehouse) {
         return res.status(404).json({ error: 'Warehouse not found' });
       }
-      
+
       const updateData: any = {};
       if (name !== undefined) updateData.name = name.trim();
       if (code !== undefined) updateData.code = code.trim();
       if (address !== undefined) updateData.address = address.trim();
       if (isActive !== undefined) updateData.isActive = isActive;
-      
+
       const [updatedWarehouse] = await db.update(warehouses)
         .set(updateData)
         .where(eq(warehouses.id, id))
         .returning();
-      
+
       console.log(`✅ WAREHOUSE UPDATED: ${updatedWarehouse.name} (ID: ${id})`);
       res.json(updatedWarehouse);
     } catch (error) {
@@ -3761,29 +3800,29 @@ export async function registerRoutes(app: Express): Promise<void> {
   app.delete('/api/warehouses/:id', async (req: Request, res: Response) => {
     try {
       const id = Number(req.params.id);
-      
+
       // Check if warehouse exists
       const [warehouse] = await db.select()
         .from(warehouses)
         .where(eq(warehouses.id, id));
-      
+
       if (!warehouse) {
         return res.status(404).json({ error: 'Warehouse not found' });
       }
-      
+
       // Check if warehouse has any products
       const [productCount] = await db.select({ count: sql`COUNT(*)` })
         .from(products)
-        .where(eq(products.location, warehouse.address));
-      
+        .where(eq(products.location, warehouse.address || ''));
+
       if (Number(productCount.count) > 0) {
-        return res.status(400).json({ 
-          error: 'Cannot delete warehouse that contains products. Please move the products first.' 
+        return res.status(400).json({
+          error: 'Cannot delete warehouse that contains products. Please move the products first.'
         });
       }
-      
+
       await db.delete(warehouses).where(eq(warehouses.id, id));
-      
+
       console.log(`✅ WAREHOUSE DELETED: ${warehouse.name} (ID: ${id})`);
       res.json({ message: 'Warehouse deleted successfully' });
     } catch (error) {
@@ -3796,12 +3835,12 @@ export async function registerRoutes(app: Express): Promise<void> {
 
   // Auth Check API for session management
   app.get('/api/auth/check', (req: Request, res: Response) => {
-    if (req.session && req.session.userId) {
+    if ((req as any).session && (req as any).session.userId) {
       res.json({
         user: {
-          id: req.session.userId,
-          username: req.session.username,
-          role: req.session.role || 'user'
+          id: (req as any).session.userId,
+          username: (req as any).session.username,
+          role: (req as any).session.role || 'user'
         }
       });
     } else {
@@ -3814,7 +3853,7 @@ export async function registerRoutes(app: Express): Promise<void> {
     try {
       // Get REAL sales data from sales table
       const salesData = await db.select().from(sales);
-      
+
       // Calculate total revenue from sales
       const totalRevenue = salesData.reduce((sum, sale) => {
         const amount = parseFloat(sale.grandTotal || '0');
@@ -3833,7 +3872,7 @@ export async function registerRoutes(app: Express): Promise<void> {
 
       // Get REAL expenses data from expenses table
       const expensesData = await db.select().from(expenses);
-      
+
       // Calculate total expenses
       const totalExpenses = expensesData.reduce((sum, expense) => {
         const amount = parseFloat(expense.amount?.toString() || '0');
@@ -3980,11 +4019,11 @@ export async function registerRoutes(app: Express): Promise<void> {
         FROM journal_entries
         ORDER BY date DESC, id DESC
       `;
-      
+
       const client = await pool.connect();
       try {
         const result = await client.query(query);
-        
+
         // Return formatted entries
         res.json(result.rows.map((entry: any) => ({
           id: entry.id,
@@ -4259,11 +4298,11 @@ export async function registerRoutes(app: Express): Promise<void> {
   // Create new purchase order
   app.post("/api/procurement/purchase-orders", async (req: Request, res: Response) => {
     try {
-      const { 
-        supplier, 
-        items, 
-        notes, 
-        expectedDeliveryDate, 
+      const {
+        supplier,
+        items,
+        notes,
+        expectedDeliveryDate,
         totalAmount,
         transportationType,
         transportationCost,
@@ -4305,7 +4344,7 @@ export async function registerRoutes(app: Express): Promise<void> {
           supplierId: supplierRecord.id,
           userId: 1, // Default user ID
           orderDate: new Date(),
-          expectedDeliveryDate: expectedDeliveryDate ? new Date(expectedDeliveryDate) : null,
+          expectedDeliveryDate: expectedDeliveryDate ? new Date(expectedDeliveryDate).toISOString().split('T')[0] : null,
           status: 'sent',
           totalAmount: finalTotalAmount.toString(),
           notes,
@@ -4327,8 +4366,8 @@ export async function registerRoutes(app: Express): Promise<void> {
         });
       }
 
-      res.json({ 
-        success: true, 
+      res.json({
+        success: true,
         message: "Purchase order created successfully",
         poNumber: newOrder.poNumber,
         id: newOrder.id
@@ -4343,7 +4382,7 @@ export async function registerRoutes(app: Express): Promise<void> {
   app.get("/api/procurement/purchase-orders/:id/items", async (req: Request, res: Response) => {
     try {
       const orderId = parseInt(req.params.id);
-      
+
       const items = await db
         .select({
           id: purchaseOrderItems.id,

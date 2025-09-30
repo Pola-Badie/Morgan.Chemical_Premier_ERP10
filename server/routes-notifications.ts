@@ -1,14 +1,15 @@
 
 import express from 'express';
 import nodemailer from 'nodemailer';
-import { db } from './db.js';
-import { users, products, customers } from '../shared/schema.js';
+import { db } from './db';
+import { users, products, customers } from '../shared/schema';
+import { lte, gte } from 'drizzle-orm';
 
 const router = express.Router();
 
 // Email transporter configuration
 const createTransporter = () => {
-  return nodemailer.createTransporter({
+  return nodemailer.createTransport({
     host: process.env.SMTP_HOST || 'smtp.gmail.com',
     port: parseInt(process.env.SMTP_PORT || '587'),
     secure: false,
@@ -87,7 +88,7 @@ router.get('/notifications/settings', async (req, res) => {
       emailFrequency: 'immediate',
       recipients: ['admin@company.com']
     };
-    
+
     res.json(settings);
   } catch (error) {
     console.error('Error fetching notification settings:', error);
@@ -114,11 +115,11 @@ router.get('/notifications/templates', async (req, res) => {
     const templates = Object.keys(EMAIL_TEMPLATES).map(key => ({
       id: key,
       name: key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()),
-      subject: EMAIL_TEMPLATES[key].subject,
+      subject: EMAIL_TEMPLATES[key as keyof typeof EMAIL_TEMPLATES].subject,
       type: 'alert',
-      variables: extractVariables(EMAIL_TEMPLATES[key].html)
+      variables: extractVariables(EMAIL_TEMPLATES[key as keyof typeof EMAIL_TEMPLATES].html)
     }));
-    
+
     res.json(templates);
   } catch (error) {
     console.error('Error fetching templates:', error);
@@ -130,18 +131,18 @@ router.get('/notifications/templates', async (req, res) => {
 router.post('/notifications/test', async (req, res) => {
   try {
     const { email, templateId } = req.body;
-    
+
     if (!email || !templateId) {
       return res.status(400).json({ error: 'Email and template ID required' });
     }
 
-    const template = EMAIL_TEMPLATES[templateId];
+    const template = EMAIL_TEMPLATES[templateId as keyof typeof EMAIL_TEMPLATES];
     if (!template) {
       return res.status(400).json({ error: 'Invalid template ID' });
     }
 
     const transporter = createTransporter();
-    
+
     // Use sample data for test
     const sampleData = {
       productName: 'Sample Product',
@@ -179,18 +180,18 @@ router.post('/notifications/test', async (req, res) => {
 router.post('/notifications/bulk', async (req, res) => {
   try {
     const { templateId, recipients } = req.body;
-    
+
     if (!templateId || !recipients || recipients.length === 0) {
       return res.status(400).json({ error: 'Template ID and recipients required' });
     }
 
-    const template = EMAIL_TEMPLATES[templateId];
+    const template = EMAIL_TEMPLATES[templateId as keyof typeof EMAIL_TEMPLATES];
     if (!template) {
       return res.status(400).json({ error: 'Invalid template ID' });
     }
 
     const transporter = createTransporter();
-    
+
     // Send to all recipients
     for (const recipient of recipients) {
       const sampleData = {
@@ -253,7 +254,7 @@ router.get('/notifications/history', async (req, res) => {
         status: 'failed'
       }
     ];
-    
+
     res.json(history);
   } catch (error) {
     console.error('Error fetching notification history:', error);
@@ -271,7 +272,7 @@ router.post('/notifications/check-alerts', async (req, res) => {
     const lowStockProducts = await db
       .select()
       .from(products)
-      .where('currentStock <= minStockLevel');
+      .where(lte(products.quantity, products.lowStockThreshold));
 
     for (const product of lowStockProducts) {
       const subject = replaceVariables(EMAIL_TEMPLATES.lowStock.subject, product);
@@ -286,20 +287,21 @@ router.post('/notifications/check-alerts', async (req, res) => {
     }
 
     // Check for expiring products
+    const thirtyDaysFromNow = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
     const expiringProducts = await db
       .select()
       .from(products)
-      .where('expiryDate <= ?', [new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)]); // 30 days
+      .where(lte(products.expiryDate, thirtyDaysFromNow)); // 30 days
 
     for (const product of expiringProducts) {
       const daysUntilExpiry = Math.ceil(
-        (new Date(product.expiryDate).getTime() - Date.now()) / (24 * 60 * 60 * 1000)
+        (new Date(product.expiryDate || '').getTime() - Date.now()) / (24 * 60 * 60 * 1000)
       );
 
       const data = {
         ...product,
         daysUntilExpiry: daysUntilExpiry.toString(),
-        expiryDate: new Date(product.expiryDate).toLocaleDateString()
+        expiryDate: new Date(product.expiryDate || '').toLocaleDateString()
       };
 
       const subject = replaceVariables(EMAIL_TEMPLATES.expiry.subject, data);

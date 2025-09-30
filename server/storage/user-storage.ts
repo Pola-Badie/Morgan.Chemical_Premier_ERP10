@@ -30,7 +30,7 @@ export class UserStorage extends BaseStorage implements IUserStorage {
 
   async deactivateUser(id: number): Promise<boolean> {
     const [updated] = await this.db.update(users)
-      .set({ isActive: false })
+      .set({ status: 'inactive' })
       .where(this.eq(users.id, id))
       .returning();
     return updated !== undefined;
@@ -98,9 +98,9 @@ export class UserStorage extends BaseStorage implements IUserStorage {
   }
 
   async getLoginLogs(limit?: number): Promise<LoginLog[]> {
-    let query = this.db.select().from(loginLogs).orderBy(this.desc(loginLogs.loginTime));
+    let query = this.db.select().from(loginLogs).orderBy(this.desc(loginLogs.timestamp));
     if (limit) {
-      query = query.limit(limit);
+      query = query.limit(limit) as any;
     }
     return await query;
   }

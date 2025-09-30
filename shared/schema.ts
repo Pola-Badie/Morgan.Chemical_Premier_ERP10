@@ -178,6 +178,7 @@ export const inventoryTransactions = pgTable("inventory_transactions", {
   referenceType: text("reference_type"), // 'sale', 'purchase', 'adjustment'
   notes: text("notes"),
   date: timestamp("date").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
   userId: integer("user_id").references(() => users.id).notNull(),
 });
 
@@ -263,9 +264,10 @@ export const rolePermissions = pgTable("role_permissions", {
 
 // Login activity logs
 export const loginLogs = pgTable("login_logs", {
-  id: serial("id").primaryKey(), 
+  id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id).notNull(),
   timestamp: timestamp("timestamp").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
   ipAddress: text("ip_address"),
   userAgent: text("user_agent"),
   success: boolean("success").notNull(),
@@ -302,6 +304,7 @@ export const expenses = pgTable("expenses", {
 export const backups = pgTable("backups", {
   id: serial("id").primaryKey(),
   timestamp: timestamp("timestamp").notNull().defaultNow(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
   filename: text("filename").notNull(),
   size: integer("size").notNull(),
   status: text("status").notNull(),
@@ -1876,6 +1879,42 @@ export const insertNotificationSchema = createInsertSchema(notifications).pick({
   data: true,
 });
 
+
+export const emailQueue = pgTable("email_queue", {
+  id: serial("id").primaryKey(),
+  to: text("to").notNull(),
+  cc: text("cc"),
+  bcc: text("bcc"),
+  subject: text("subject").notNull(),
+  body: text("body").notNull(),
+  attachments: jsonb("attachments"), // Array of attachment metadata
+  status: text("status").default("pending").notNull(), // pending, sent, failed
+  priority: integer("priority").default(100).notNull(), // Lower number = higher priority
+  scheduledAt: timestamp("scheduled_at"), // For scheduling future emails
+  sentAt: timestamp("sent_at"),
+  errorMessage: text("error_message"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => ({
+  // Indexes for performance
+  statusIdx: index("email_status_idx").on(table
+    .status),
+  priorityIdx: index("email_priority_idx").on(table.priority),
+  scheduledAtIdx: index("email_scheduled_at_idx").on(table.scheduledAt),
+}));
+
+// Email Queue Insert Schema
+export const insertEmailQueueSchema = createInsertSchema(emailQueue).pick({
+  to: true,
+  cc: true,
+  bcc: true,
+  subject: true,
+  body: true,
+  attachments: true,
+  status: true,
+  priority: true,
+  scheduledAt: true,
+});
 // Additional Type Exports
 export type InsertBatch = z.infer<typeof insertBatchSchema>;
 export type Batch = typeof batches.$inferSelect;

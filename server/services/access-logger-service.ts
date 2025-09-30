@@ -27,7 +27,7 @@ export interface PermissionChangeLog {
  * Logs all permission checks and changes in Premier ERP
  */
 export class AccessLogger {
-  
+
   /**
    * Log permission check attempt with full context
    */
@@ -35,7 +35,7 @@ export class AccessLogger {
     try {
       // Create access_logs table if it doesn't exist
       await this.ensureAccessLogsTable();
-      
+
       await db.execute(sql`
         INSERT INTO access_logs (
           user_id, resource, action, granted, reason, 
@@ -58,7 +58,7 @@ export class AccessLogger {
   async logPermissionChange(log: PermissionChangeLog): Promise<void> {
     try {
       await this.ensurePermissionChangesTable();
-      
+
       await db.execute(sql`
         INSERT INTO permission_changes (
           admin_user_id, target_user_id, module_name, access_granted,
@@ -104,13 +104,13 @@ export class AccessLogger {
         LEFT JOIN users au ON pc.admin_user_id = au.id
         LEFT JOIN users tu ON pc.target_user_id = tu.id
       `;
-      
+
       if (targetUserId) {
         query = sql`${query} WHERE pc.target_user_id = ${targetUserId}`;
       }
-      
+
       query = sql`${query} ORDER BY pc.created_at DESC LIMIT ${limit}`;
-      
+
       const result = await db.execute(query);
       return result.rows;
     } catch (error) {
@@ -130,20 +130,20 @@ export class AccessLogger {
     recentDenials: any[];
   }> {
     try {
-      const [totalChecks] = await db.execute(sql`
+      const totalChecks = await db.execute(sql`
         SELECT COUNT(*) as count 
         FROM access_logs 
         WHERE created_at >= NOW() - INTERVAL '${sql.raw(days.toString())} days'
       `);
 
-      const [deniedAttempts] = await db.execute(sql`
+      const deniedAttempts = await db.execute(sql`
         SELECT COUNT(*) as count 
         FROM access_logs 
         WHERE granted = false 
         AND created_at >= NOW() - INTERVAL '${sql.raw(days.toString())} days'
       `);
 
-      const [uniqueUsers] = await db.execute(sql`
+      const uniqueUsers = await db.execute(sql`
         SELECT COUNT(DISTINCT user_id) as count 
         FROM access_logs 
         WHERE created_at >= NOW() - INTERVAL '${sql.raw(days.toString())} days'
@@ -169,11 +169,11 @@ export class AccessLogger {
       `);
 
       return {
-        totalChecks: totalChecks.rows[0]?.count || 0,
-        deniedAttempts: deniedAttempts.rows[0]?.count || 0,
-        uniqueUsers: uniqueUsers.rows[0]?.count || 0,
-        mostAccessedResources: mostAccessedResources.rows,
-        recentDenials: recentDenials.rows
+        totalChecks: (totalChecks as any).rows[0]?.count || 0,
+        deniedAttempts: (deniedAttempts as any).rows[0]?.count || 0,
+        uniqueUsers: (uniqueUsers as any).rows[0]?.count || 0,
+        mostAccessedResources: (mostAccessedResources as any).rows,
+        recentDenials: (recentDenials as any).rows
       };
     } catch (error) {
       console.error('Failed to get security analytics:', error);

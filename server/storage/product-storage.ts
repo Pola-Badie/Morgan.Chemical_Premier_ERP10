@@ -10,7 +10,7 @@ export class ProductStorage extends BaseStorage implements IProductStorage {
   async getProducts(filters?: { type?: string; status?: string; categoryId?: number }): Promise<Product[]> {
     let query = this.db.select().from(products);
     const conditions = [];
-    
+
     if (filters?.type) {
       // Note: products table doesn't have type field, using status instead
       conditions.push(this.eq(products.status, filters.type));
@@ -21,11 +21,11 @@ export class ProductStorage extends BaseStorage implements IProductStorage {
     if (filters?.categoryId) {
       conditions.push(this.eq(products.categoryId, filters.categoryId));
     }
-    
+
     if (conditions.length > 0) {
-      query = query.where(this.and(...conditions));
+      query = query.where(this.and(...conditions)) as any;
     }
-    
+
     return await query.orderBy(this.desc(products.createdAt));
   }
 

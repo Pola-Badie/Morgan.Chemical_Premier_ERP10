@@ -8,29 +8,41 @@ export function registerFinancialReportsRoutes(app: any) {
   app.get('/api/reports/trial-balance', async (req: Request, res: Response) => {
     try {
       const { startDate, endDate, accountFilter } = req.query;
-      
-      // Build the base query with proper date filtering
-      let query = db
-        .select({
-          id: accounts.id,
-          code: accounts.code,
-          name: accounts.name,
-          type: accounts.type,
-          debitTotal: sql<number>`COALESCE(SUM(${journalEntryLines.debit}), 0)`,
-          creditTotal: sql<number>`COALESCE(SUM(${journalEntryLines.credit}), 0)`
-        })
-        .from(accounts)
-        .leftJoin(journalEntryLines, eq(accounts.id, journalEntryLines.accountId))
-        .leftJoin(journalEntries, eq(journalEntryLines.journalEntryId, journalEntries.id));
 
-      // Apply date filtering if provided
+      // Build the query conditionally to avoid type issues
+      let query;
       if (startDate && endDate) {
-        query = query.where(
-          and(
-            gte(journalEntries.date, startDate as string),
-            lte(journalEntries.date, endDate as string)
-          )
-        );
+        query = db
+          .select({
+            id: accounts.id,
+            code: accounts.code,
+            name: accounts.name,
+            type: accounts.type,
+            debitTotal: sql<number>`COALESCE(SUM(${journalEntryLines.debit}), 0)`,
+            creditTotal: sql<number>`COALESCE(SUM(${journalEntryLines.credit}), 0)`
+          })
+          .from(accounts)
+          .leftJoin(journalEntryLines, eq(accounts.id, journalEntryLines.accountId))
+          .leftJoin(journalEntries, eq(journalEntryLines.journalEntryId, journalEntries.id))
+          .where(
+            and(
+              gte(journalEntries.date, startDate as string),
+              lte(journalEntries.date, endDate as string)
+            )
+          );
+      } else {
+        query = db
+          .select({
+            id: accounts.id,
+            code: accounts.code,
+            name: accounts.name,
+            type: accounts.type,
+            debitTotal: sql<number>`COALESCE(SUM(${journalEntryLines.debit}), 0)`,
+            creditTotal: sql<number>`COALESCE(SUM(${journalEntryLines.credit}), 0)`
+          })
+          .from(accounts)
+          .leftJoin(journalEntryLines, eq(accounts.id, journalEntryLines.accountId))
+          .leftJoin(journalEntries, eq(journalEntryLines.journalEntryId, journalEntries.id));
       }
 
       const accountsData = await query.groupBy(accounts.id, accounts.code, accounts.name, accounts.type);
@@ -38,7 +50,7 @@ export function registerFinancialReportsRoutes(app: any) {
       // Filter by account type if specified
       let filteredAccounts = accountsData;
       if (accountFilter && accountFilter !== 'all') {
-        filteredAccounts = accountsData.filter(acc => 
+        filteredAccounts = accountsData.filter(acc =>
           acc.type.toLowerCase() === (accountFilter as string).toLowerCase()
         );
       }
@@ -75,7 +87,7 @@ export function registerFinancialReportsRoutes(app: any) {
   app.get('/api/reports/profit-loss', async (req: Request, res: Response) => {
     try {
       const { startDate, endDate } = req.query;
-      
+
       // Get REAL revenue data from sales table
       const salesData = await db.select().from(sales)
         .where(
@@ -84,7 +96,7 @@ export function registerFinancialReportsRoutes(app: any) {
             lte(sales.date, new Date(endDate as string))
           ) : undefined
         );
-      
+
 
       const totalRevenue = salesData.reduce((sum, sale) => {
         const amount = parseFloat(sale.grandTotal || '0');
@@ -99,7 +111,7 @@ export function registerFinancialReportsRoutes(app: any) {
             lte(expenses.date, endDate as string)
           ) : undefined
         );
-      
+
 
       const totalExpenses = expensesData.reduce((sum, expense) => {
         const amount = parseFloat(expense.amount || '0');
@@ -163,7 +175,7 @@ export function registerFinancialReportsRoutes(app: any) {
   app.get('/api/reports/balance-sheet', async (req: Request, res: Response) => {
     try {
       const { date } = req.query;
-      
+
       // Get asset accounts (1000-1999)
       const assetAccounts = await db
         .select({
@@ -291,19 +303,19 @@ export function registerFinancialReportsRoutes(app: any) {
   app.get('/api/reports/journal-entries', async (req: Request, res: Response) => {
     try {
       const { startDate, endDate } = req.query;
-      
+
       let query = db
         .select({
           id: journalEntries.id,
           date: journalEntries.date,
-          description: journalEntries.description,
+          description: journalEntries.memo,
           reference: journalEntries.reference,
           totalDebit: sql<number>`COALESCE(SUM(${journalEntryLines.debit}), 0)`,
           totalCredit: sql<number>`COALESCE(SUM(${journalEntryLines.credit}), 0)`
         })
         .from(journalEntries)
         .leftJoin(journalEntryLines, eq(journalEntries.id, journalEntryLines.journalEntryId))
-        .groupBy(journalEntries.id, journalEntries.date, journalEntries.description, journalEntries.reference)
+        .groupBy(journalEntries.id, journalEntries.date, journalEntries.memo, journalEntries.reference)
         .orderBy(desc(journalEntries.date));
 
       const entries = await query;
@@ -328,7 +340,7 @@ export function registerFinancialReportsRoutes(app: any) {
   app.get('/api/reports/general-ledger', async (req: Request, res: Response) => {
     try {
       const { accountId, startDate, endDate } = req.query;
-      
+
       // Get account details
       const accountDetails = await db
         .select()
@@ -344,7 +356,7 @@ export function registerFinancialReportsRoutes(app: any) {
       const transactions = await db
         .select({
           date: journalEntries.date,
-          description: sql<string>`COALESCE(${journalEntries.description}, ${journalEntryLines.description}, '')`,
+          description: sql<string>`COALESCE(${journalEntries.memo}, ${journalEntryLines.description}, '')`,
           reference: journalEntries.reference,
           debit: sql<number>`${journalEntryLines.debit}`,
           credit: sql<number>`${journalEntryLines.credit}`,

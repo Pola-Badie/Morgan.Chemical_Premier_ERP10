@@ -43,12 +43,12 @@ router.get('/performance/metrics', async (req, res) => {
 router.get('/performance/health', async (req, res) => {
   try {
     const start = Date.now();
-    
+
     // Test database connection
     await db.select().from('users' as any).limit(1);
-    
+
     const dbResponseTime = Date.now() - start;
-    
+
     const health = {
       status: 'healthy',
       timestamp: new Date().toISOString(),
@@ -72,7 +72,7 @@ router.get('/performance/health', async (req, res) => {
     res.status(500).json({
       status: 'unhealthy',
       timestamp: new Date().toISOString(),
-      error: error.message
+      error: (error as Error).message
     });
   }
 });

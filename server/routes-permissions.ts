@@ -36,7 +36,7 @@ router.post('/permissions/check/:userId', async (req, res) => {
     }
 
     const { resource, action } = permissionCheckSchema.parse(req.body);
-    
+
     const result = await permissionService.checkPermission({
       userId,
       resource,
@@ -71,7 +71,7 @@ router.get('/permissions/users/:userId/complete', async (req, res) => {
     }
 
     const permissions = await permissionService.getUserPermissions(userId);
-    
+
     res.json({
       success: true,
       data: permissions,
@@ -80,9 +80,9 @@ router.get('/permissions/users/:userId/complete', async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching complete permissions:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Failed to fetch permissions' 
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch permissions'
     });
   }
 });
@@ -95,16 +95,16 @@ router.post('/permissions/users/:userId/modules/:moduleName', async (req, res) =
   try {
     const userId = parseInt(req.params.userId);
     const moduleName = req.params.moduleName;
-    
+
     if (isNaN(userId)) {
       return res.status(400).json({ error: 'Invalid user ID' });
     }
 
     const { accessGranted } = setPermissionSchema.parse(req.body);
-    
+
     // Get admin user ID from token (assuming middleware sets this)
     const adminUserId = (req as any).user?.id || 1; // Fallback for development
-    
+
     const permission = await permissionService.setUserPermission(
       userId,
       moduleName,
@@ -122,9 +122,9 @@ router.post('/permissions/users/:userId/modules/:moduleName', async (req, res) =
       return res.status(400).json({ error: error.errors });
     }
     console.error('Error setting permission:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: error.message || 'Failed to set permission' 
+    res.status(500).json({
+      success: false,
+      error: (error as Error).message || 'Failed to set permission'
     });
   }
 });
@@ -142,7 +142,7 @@ router.post('/permissions/users/:userId/bulk', async (req, res) => {
 
     const { permissions } = bulkPermissionSchema.parse(req.body);
     const adminUserId = (req as any).user?.id || 1;
-    
+
     const results = [];
     const errors = [];
 
@@ -159,7 +159,7 @@ router.post('/permissions/users/:userId/bulk', async (req, res) => {
       } catch (error) {
         errors.push({
           moduleName: perm.moduleName,
-          error: error.message
+          error: (error as Error).message
         });
       }
     }
@@ -169,8 +169,7 @@ router.post('/permissions/users/:userId/bulk', async (req, res) => {
       data: {
         updated: results.length,
         errors: errors.length,
-        results,
-        errors
+        results
       },
       message: `Updated ${results.length} permissions, ${errors.length} errors`
     });
@@ -179,9 +178,9 @@ router.post('/permissions/users/:userId/bulk', async (req, res) => {
       return res.status(400).json({ error: error.errors });
     }
     console.error('Error bulk updating permissions:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Failed to bulk update permissions' 
+    res.status(500).json({
+      success: false,
+      error: 'Failed to bulk update permissions'
     });
   }
 });
@@ -202,9 +201,9 @@ router.get('/permissions/configuration', async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching permission configuration:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Failed to fetch configuration' 
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch configuration'
     });
   }
 });
@@ -233,9 +232,9 @@ router.get('/permissions/analytics/user/:userId', async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching user access logs:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Failed to fetch access logs' 
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch access logs'
     });
   }
 });
@@ -256,9 +255,9 @@ router.get('/permissions/analytics/security', async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching security analytics:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Failed to fetch security analytics' 
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch security analytics'
     });
   }
 });
@@ -271,7 +270,7 @@ router.get('/permissions/history', async (req, res) => {
   try {
     const targetUserId = req.query.userId ? parseInt(req.query.userId as string) : undefined;
     const limit = parseInt(req.query.limit as string) || 100;
-    
+
     const history = await accessLogger.getPermissionChangeHistory(targetUserId, limit);
 
     res.json({
@@ -284,9 +283,9 @@ router.get('/permissions/history', async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching permission history:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Failed to fetch permission history' 
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch permission history'
     });
   }
 });
@@ -299,7 +298,7 @@ router.get('/permissions/matrix', async (req, res) => {
   try {
     // This would require querying all users and their permissions
     // Implementation for matrix view showing all users vs all modules
-    
+
     res.json({
       success: true,
       message: 'Permission matrix endpoint - implementation in progress',
@@ -310,9 +309,9 @@ router.get('/permissions/matrix', async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching permission matrix:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Failed to fetch permission matrix' 
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch permission matrix'
     });
   }
 });
