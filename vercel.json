@@ -1,7 +1,9 @@
 {
   "version": 2,
-  "buildCommand": "npm run build",
+  "framework": null,
+  "buildCommand": "npm run vercel-build",
   "outputDirectory": "dist",
+  "installCommand": "npm install",
   "routes": [
     {
       "src": "/api/(.*)",
@@ -17,5 +19,8 @@
       "maxDuration": 30,
       "includeFiles": "{shared,server}/**"
     }
+  },
+  "env": {
+    "NODE_ENV": "production"
   }
 }
